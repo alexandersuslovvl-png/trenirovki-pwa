@@ -31,9 +31,9 @@ python tools/build_sw.py
 
 ## Запуск локально
 ```bash
-python -m http.server 8765
+python tools/serve.py 8765
 ```
-Затем открой http://localhost:8765.
+Затем открой http://localhost:8765. Этот сервер отключает HTTP-кэш, поэтому правки видны сразу. Service worker всё равно кэширует файлы: после правок пересобери `sw.js` и перезагрузи страницу дважды.
 
 ## Публикация на GitHub Pages
 1. Создай на github.com пустой публичный репозиторий `trenirovki-pwa`, без README.

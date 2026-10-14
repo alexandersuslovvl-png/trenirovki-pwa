@@ -8,10 +8,11 @@ const $rest = document.getElementById("rest");
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const go = (hash) => { location.hash = hash; };
 const clock = (sec) => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, "0")}`;
-const target = (p) => `${p.sets} × ${p.min === p.max ? p.min : `${p.min}–${p.max}`}${p.unit === "sec" ? " с" : ""}`;
+const range = (p) => (p.min === p.max ? `${p.min}` : `${p.min}–${p.max}`);
+const target = (p) => (p.warmup ? `${range(p)} мин` : `${p.sets} × ${range(p)}${p.unit === "sec" ? " с" : ""}`);
 const plural = (n, one, few, many) => (n % 10 === 1 && n % 100 !== 11 ? one : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? few : many);
-const repsText = (p) => `${p.min === p.max ? p.min : `${p.min}–${p.max}`} ${p.unit === "sec" ? "секунд" : plural(p.max, "повтор", "повтора", "повторов")}`;
-const targetLong = (p) => `${p.sets} ${plural(p.sets, "подход", "подхода", "подходов")} по ${repsText(p)}`;
+const repsText = (p) => `${range(p)} ${p.unit === "sec" ? "секунд" : p.unit === "min" ? "минут" : plural(p.max, "повтор", "повтора", "повторов")}`;
+const targetLong = (p) => (p.warmup ? repsText(p) : `${p.sets} ${plural(p.sets, "подход", "подхода", "подходов")} по ${repsText(p)}`);
 const exName = (it) => EXERCISES[it.ex].name + (it.superset ? ` + ${EXERCISES[it.superset].name}` : "");
 
 // Черновик значений подхода (вес/повторы), чтобы перерисовка экрана их не сбрасывала
@@ -85,7 +86,7 @@ function renderHome() {
         <button class="card day ${d === next && !a ? "next" : ""}" data-act="start" data-day="${d}">
           <span class="letter">${d}</span>
           <span class="day-body"><b>${esc(p.title)}</b>
-          <span class="muted">${p.items.length} упражнений${d === next ? " · следующая по очереди" : ""}</span></span>
+          <span class="muted">разминка + ${p.items.filter((x) => !x.warmup).length} упражнений${d === next ? " · следующая по очереди" : ""}</span></span>
         </button>`).join("")}
     </div>
     <h2>История</h2>
@@ -103,8 +104,8 @@ function renderHome() {
 /* ---------- тренировка ---------- */
 function itemStatus(it, plan) {
   if (it.endedAt) return ["done", "✓"];
-  if (it.startedAt) return ["live", `${it.sets.length}/${plan.sets}`];
-  return ["", `${plan.sets}×`];
+  if (it.startedAt) return ["live", plan.warmup ? "идёт" : `${it.sets.length}/${plan.sets}`];
+  return ["", plan.warmup ? "разминка" : `${plan.sets}×`];
 }
 
 function renderWorkout() {
@@ -117,9 +118,11 @@ function renderWorkout() {
       <span class="timer" data-elapsed="${s.startedAt}"></span></header>
     <ol class="list">
       ${s.items.map((it, i) => {
-        const p = day.items[i];
+        const p = store.planOf(s, i);
         const [cls, label] = itemStatus(it, p);
-        return `${p.abs && !day.items[i - 1]?.abs ? `<li class="sep">Пресс</li>` : ""}
+        const prev = i > 0 ? store.planOf(s, i - 1) : null;
+        const sep = p.abs && !prev?.abs ? "Пресс" : prev?.warmup && !p.warmup ? "Силовая часть" : "";
+        return `${sep ? `<li class="sep">${sep}</li>` : ""}
         <li><button class="item ${cls} ${i === firstOpen ? "current" : ""}" data-go="#/e/${i}">
           <img src="${EXERCISES[it.ex].img[0]}" alt="" loading="lazy">
           <span class="item-body"><b>${esc(exName(it))}</b><span class="muted">${target(p)}${p.side ? " " + esc(p.side) : ""}</span></span>
@@ -137,7 +140,7 @@ function renderWorkout() {
 /* ---------- карточка упражнения ---------- */
 function defaults(idx) {
   const it = store.active().items[idx];
-  const plan = PROGRAM[store.active().day].items[idx];
+  const plan = store.planOf(store.active(), idx);
   const prev = it.sets[it.sets.length - 1] || store.lastResult(it.ex, it.superset)?.sets[0];
   return {
     w: prev?.w ?? "", r: prev?.r ?? plan.min,
@@ -186,9 +189,9 @@ function progressHint(it, plan) {
 
 function renderExercise(idx) {
   const s = store.active();
-  const day = PROGRAM[s.day];
-  const it = s.items[idx], plan = day.items[idx];
+  const it = s.items[idx];
   if (!it) return go("#/w");
+  const plan = store.planOf(s, idx);
   const d = (draft[idx] ||= defaults(idx));
   const last = store.lastResult(it.ex, it.superset);
   const tab = supersetTab[idx] || 0;
@@ -205,15 +208,22 @@ function renderExercise(idx) {
     ${info(shownEx)}
 
     <section class="plan">
-      <div><span class="lbl">Цель по программе</span><b>${targetLong(plan)}</b>${plan.side ? ` <span class="muted">${esc(plan.side)}</span>` : ""}<span class="muted"> · отдых ${clock(plan.rest)}</span></div>
+      <div><span class="lbl">Цель по программе</span><b>${targetLong(plan)}</b>${plan.side ? ` <span class="muted">${esc(plan.side)}</span>` : ""}${plan.rest ? `<span class="muted"> · отдых ${clock(plan.rest)}</span>` : ""}</div>
       ${plan.note ? `<p class="muted small">${esc(plan.note)}</p>` : ""}
       ${last ? `<div><span class="lbl">Прошлый раз, ${fmtDate(last.date)}</span>${last.sets.map((x) => fmtSet(it, plan, x)).join(" · ")}</div>` : ""}
       ${progressHint(it, plan)}
     </section>
 
-    ${!it.startedAt ? `<button class="btn primary wide big" data-act="start-item">▶ Начать упражнение</button>` : ""}
+    ${!it.startedAt ? `<button class="btn primary wide big" data-act="start-item">▶ Начать ${plan.warmup ? "разминку" : "упражнение"}</button>` : ""}
 
-    ${it.startedAt ? `<section class="sets">
+    ${plan.warmup && it.startedAt ? `<section class="sets">
+      ${running ? `<div class="warm-clock"><span class="lbl">Идёт разминка · начата в ${fmtTime(it.startedAt)}</span><b data-elapsed="${it.startedAt}"></b></div>
+        <button class="btn primary wide big" data-act="end-item">■ Закончить разминку</button>`
+      : `<p class="done-msg">Разминка: ${fmtTime(it.startedAt)}–${fmtTime(it.endedAt)} (${fmtDur(it.endedAt - it.startedAt)})</p>
+        <button class="link" data-act="reopen">Продолжить разминку</button>`}
+    </section>` : ""}
+
+    ${!plan.warmup && it.startedAt ? `<section class="sets">
       <div class="sets-head"><b>Подходы</b><span class="muted">начато в ${fmtTime(it.startedAt)}${it.endedAt ? ` · закончено в ${fmtTime(it.endedAt)} (${fmtDur(it.endedAt - it.startedAt)})` : ""}</span></div>
       <ol class="done-sets">${Array.from({ length: Math.max(plan.sets, it.sets.length) }, (_, k) => {
         const x = it.sets[k];
@@ -259,7 +269,8 @@ function renderSummary(id) {
       ${s.items.map((it, i) => `<li class="card">
         <b>${esc(exName(it))}</b>
         <span class="muted small">${it.startedAt ? `${fmtTime(it.startedAt)}–${it.endedAt ? fmtTime(it.endedAt) : "…"}` : "пропущено"}</span>
-        ${it.sets.length ? `<p>${it.sets.map((x) => fmtSet(it, day.items[i], x)).join(" · ")}</p>` : ""}</li>`).join("")}
+        ${it.sets.length ? `<p>${it.sets.map((x) => fmtSet(it, store.planOf(s, i), x)).join(" · ")}</p>` : ""}
+        ${store.planOf(s, i).warmup && it.endedAt ? `<p>${fmtDur(it.endedAt - it.startedAt)}</p>` : ""}</li>`).join("")}
     </ol>
     <button class="btn primary wide big" data-act="export-md" data-id="${s.id}">Экспорт в Obsidian (.md)</button>
     <div class="grid2">
@@ -319,8 +330,8 @@ document.addEventListener("submit", (e) => {
   unlockAudio();
   const { idx, d } = readForm(form);
   const it = store.active().items[idx];
-  const plan = PROGRAM[store.active().day].items[idx];
-  const set = { w: d.w ?? "", r: d.r === "" ? null : +d.r };
+  const plan = store.planOf(store.active(), idx);
+  const set ={ w: d.w ?? "", r: d.r === "" ? null : +d.r };
   if (it.superset) Object.assign(set, { w2: d.w2 ?? "", r2: d.r2 === "" ? null : +d.r2 });
   store.addSet(idx, set);
   // последний плановый подход тоже даёт отдых — следующим будет другое упражнение

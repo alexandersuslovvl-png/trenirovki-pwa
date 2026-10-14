@@ -20,6 +20,15 @@ function save() {
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
+// План упражнения внутри тренировки. Тренировки до 2026-10-15 хранили только ссылку на программу,
+// поэтому для них ищем такое же упражнение в текущей программе.
+export function planOf(session, idx) {
+  const it = session.items[idx];
+  if (it.plan) return it.plan;
+  const same = PROGRAM[session.day]?.items.find((p) => p.ex === it.ex && (p.superset || null) === it.superset);
+  return same || { ex: it.ex, sets: Math.max(1, it.sets.length), min: 0, max: 0, rest: 60, unit: "reps" };
+}
+
 export const getState = () => state;
 export const active = () => state.sessions.find((s) => s.id === state.activeId) || null;
 export const session = (id) => state.sessions.find((s) => s.id === id) || null;
@@ -33,7 +42,7 @@ export function nextDay() {
 export function startSession(day) {
   const s = {
     id: uid(), day, startedAt: Date.now(), endedAt: null,
-    items: PROGRAM[day].items.map((it) => ({ ex: it.ex, superset: it.superset || null, startedAt: null, endedAt: null, sets: [] })),
+    items: PROGRAM[day].items.map((it) => ({ ex: it.ex, superset: it.superset || null, plan: { ...it }, startedAt: null, endedAt: null, sets: [] })),
   };
   state.sessions.push(s);
   state.activeId = s.id;

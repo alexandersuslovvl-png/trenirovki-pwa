@@ -1,5 +1,5 @@
 // Сгенерировано tools/build_sw.py — не редактировать вручную.
-const CACHE = "trenirovki-14141cdafc";
+const CACHE = "trenirovki-2244d0df51";
 const ASSETS = [
   "./",
   "index.html",
@@ -10,6 +10,8 @@ const ASSETS = [
   "js/export.js",
   "js/muscles.js",
   "js/store.js",
+  "img/Ab_Crunch_Machine-0.jpg",
+  "img/Ab_Crunch_Machine-1.jpg",
   "img/Ab_Roller-0.jpg",
   "img/Ab_Roller-1.jpg",
   "img/Band_Assisted_Pull-Up-0.jpg",
@@ -28,16 +30,30 @@ const ASSETS = [
   "img/Dumbbell_Lunges-1.jpg",
   "img/Dumbbell_Shoulder_Press-0.jpg",
   "img/Dumbbell_Shoulder_Press-1.jpg",
+  "img/Elliptical_Trainer-0.jpg",
+  "img/Elliptical_Trainer-1.jpg",
   "img/Face_Pull-0.jpg",
   "img/Face_Pull-1.jpg",
   "img/Goblet_Squat-0.jpg",
   "img/Goblet_Squat-1.jpg",
   "img/Hammer_Curls-0.jpg",
   "img/Hammer_Curls-1.jpg",
+  "img/Hyperextensions_Back_Extensions-0.jpg",
+  "img/Hyperextensions_Back_Extensions-1.jpg",
   "img/Incline_Dumbbell_Press-0.jpg",
   "img/Incline_Dumbbell_Press-1.jpg",
   "img/Knee_Hip_Raise_On_Parallel_Bars-0.jpg",
   "img/Knee_Hip_Raise_On_Parallel_Bars-1.jpg",
+  "img/Leg_Press-0.jpg",
+  "img/Leg_Press-1.jpg",
+  "img/Leverage_Incline_Chest_Press-0.jpg",
+  "img/Leverage_Incline_Chest_Press-1.jpg",
+  "img/Leverage_Iso_Row-0.jpg",
+  "img/Leverage_Iso_Row-1.jpg",
+  "img/Lying_Leg_Curls-0.jpg",
+  "img/Lying_Leg_Curls-1.jpg",
+  "img/Machine_Shoulder_Military_Press-0.jpg",
+  "img/Machine_Shoulder_Military_Press-1.jpg",
   "img/One-Arm_Dumbbell_Row-0.jpg",
   "img/One-Arm_Dumbbell_Row-1.jpg",
   "img/Pallof_Press-0.jpg",
@@ -52,6 +68,8 @@ const ASSETS = [
   "img/Side_Bridge-1.jpg",
   "img/Side_Lateral_Raise-0.jpg",
   "img/Side_Lateral_Raise-1.jpg",
+  "img/Standing_Biceps_Cable_Curl-0.jpg",
+  "img/Standing_Biceps_Cable_Curl-1.jpg",
   "img/Stiff-Legged_Dumbbell_Deadlift-0.jpg",
   "img/Stiff-Legged_Dumbbell_Deadlift-1.jpg",
   "img/Triceps_Pushdown_-_Rope_Attachment-0.jpg",
@@ -66,7 +84,10 @@ const ASSETS = [
 ];
 
 self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+  // cache: "reload" — мимо HTTP-кэша браузера, иначе новая версия может собраться из старых файлов
+  e.waitUntil(caches.open(CACHE)
+    .then((c) => c.addAll(ASSETS.map((u) => new Request(u, { cache: "reload" }))))
+    .then(() => self.skipWaiting()));
 });
 
 self.addEventListener("activate", (e) => {

@@ -22,7 +22,10 @@ const ASSETS = [
 ];
 
 self.addEventListener("install", (e) => {{
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+  // cache: "reload" — мимо HTTP-кэша браузера, иначе новая версия может собраться из старых файлов
+  e.waitUntil(caches.open(CACHE)
+    .then((c) => c.addAll(ASSETS.map((u) => new Request(u, {{ cache: "reload" }}))))
+    .then(() => self.skipWaiting()));
 }});
 
 self.addEventListener("activate", (e) => {{

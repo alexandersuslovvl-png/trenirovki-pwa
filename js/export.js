@@ -1,5 +1,6 @@
 // Экспорт тренировки в Markdown (формат дневника Obsidian) и отдача файлов на телефоне.
 import { EXERCISES, PROGRAM } from "./data.js";
+import { planOf } from "./store.js";
 
 const pad = (n) => String(n).padStart(2, "0");
 export const fmtDate = (t) => { const d = new Date(t); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
@@ -41,9 +42,11 @@ export function toMarkdown(session) {
   const head = `| Упражнение | ${Array.from({ length: cols }, (_, i) => `Подход ${i + 1}`).join(" | ")} | Время |`;
   const sep = `|---|${"---|".repeat(cols)}---|`;
   const rows = session.items.map((it, i) => {
-    const plan = day.items[i];
+    const plan = planOf(session, i);
     const name = `[[${EXERCISES[it.ex].name}]]` + (it.superset ? ` + [[${EXERCISES[it.superset].name}]]` : "");
-    const cells = Array.from({ length: cols }, (_, k) => (it.sets[k] ? fmtSet(it, plan, it.sets[k]) : (k < (plan?.sets || 0) ? "—" : "")));
+    const cells = plan.warmup
+      ? Array.from({ length: cols }, (_, k) => (k === 0 && it.endedAt ? fmtDur(it.endedAt - it.startedAt) : ""))
+      : Array.from({ length: cols }, (_, k) => (it.sets[k] ? fmtSet(it, plan, it.sets[k]) : (k < plan.sets ? "—" : "")));
     const time = it.startedAt ? `${fmtTime(it.startedAt)}–${it.endedAt ? fmtTime(it.endedAt) : "…"}` : "пропущено";
     return `| ${name} | ${cells.join(" | ")} | ${time} |`;
   });
