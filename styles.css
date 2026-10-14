@@ -144,6 +144,9 @@ button, .btn { font: inherit; color: inherit; cursor: pointer; }
 .done-sets { list-style: none; padding: 0; margin: 10px 0; display: grid; gap: 6px; }
 .done-sets li { display: grid; grid-template-columns: 28px 1fr auto; align-items: center; background: var(--surface); border-radius: 10px; padding: 8px 12px; font-variant-numeric: tabular-nums; }
 .done-sets li > span:first-child { color: var(--muted); }
+.done-sets li.todo { background: none; border: 1px dashed var(--line); color: var(--muted); }
+.done-sets li.todo.now { border-color: var(--accent); color: var(--text); }
+.done-msg { margin: 12px 0 0; padding: 12px 14px; border-radius: 12px; background: rgba(76, 195, 138, .14); color: var(--ok); font-weight: 600; }
 .entry { margin-top: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; }
 .entry > p.lbl { margin: 8px 0 4px; color: var(--text); }
 .stepper { margin-bottom: 12px; }

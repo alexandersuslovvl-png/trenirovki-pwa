@@ -9,12 +9,17 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "
 const go = (hash) => { location.hash = hash; };
 const clock = (sec) => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, "0")}`;
 const target = (p) => `${p.sets} × ${p.min === p.max ? p.min : `${p.min}–${p.max}`}${p.unit === "sec" ? " с" : ""}`;
+const plural = (n, one, few, many) => (n % 10 === 1 && n % 100 !== 11 ? one : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? few : many);
+const repsText = (p) => `${p.min === p.max ? p.min : `${p.min}–${p.max}`} ${p.unit === "sec" ? "секунд" : plural(p.max, "повтор", "повтора", "повторов")}`;
+const targetLong = (p) => `${p.sets} ${plural(p.sets, "подход", "подхода", "подходов")} по ${repsText(p)}`;
 const exName = (it) => EXERCISES[it.ex].name + (it.superset ? ` + ${EXERCISES[it.superset].name}` : "");
 
 // Черновик значений подхода (вес/повторы), чтобы перерисовка экрана их не сбрасывала
 const draft = {};
 // Какое упражнение суперсета показано в карточке: 0 — первое, 1 — второе
 const supersetTab = {};
+// Упражнения, где после плановых подходов попросили дополнительный
+const extraSet = {};
 
 /* ---------- звук, вибрация, экран ---------- */
 let audio;
@@ -169,7 +174,7 @@ function setInputs(exKey, plan, d, suffix) {
   const ex = EXERCISES[exKey];
   const sec = plan.unit === "sec";
   return `${ex.weightLabel ? stepper("w" + suffix, ex.weightLabel, d["w" + suffix], ex.weightStep, "кг") : ""}
-    ${stepper("r" + suffix, sec ? "Время" : "Повторы", d["r" + suffix], sec ? 5 : 1, sec ? "с" : "раз")}`;
+    ${stepper("r" + suffix, sec ? "Секунд в подходе" : "Повторов в подходе", d["r" + suffix], sec ? 5 : 1, sec ? "с" : "раз")}`;
 }
 
 function progressHint(it, plan) {
@@ -200,7 +205,7 @@ function renderExercise(idx) {
     ${info(shownEx)}
 
     <section class="plan">
-      <div><span class="lbl">Цель</span><b>${target(plan)}</b>${plan.side ? ` <span class="muted">${esc(plan.side)}</span>` : ""}<span class="muted"> · отдых ${clock(plan.rest)}</span></div>
+      <div><span class="lbl">Цель по программе</span><b>${targetLong(plan)}</b>${plan.side ? ` <span class="muted">${esc(plan.side)}</span>` : ""}<span class="muted"> · отдых ${clock(plan.rest)}</span></div>
       ${plan.note ? `<p class="muted small">${esc(plan.note)}</p>` : ""}
       ${last ? `<div><span class="lbl">Прошлый раз, ${fmtDate(last.date)}</span>${last.sets.map((x) => fmtSet(it, plan, x)).join(" · ")}</div>` : ""}
       ${progressHint(it, plan)}
@@ -210,16 +215,21 @@ function renderExercise(idx) {
 
     ${it.startedAt ? `<section class="sets">
       <div class="sets-head"><b>Подходы</b><span class="muted">начато в ${fmtTime(it.startedAt)}${it.endedAt ? ` · закончено в ${fmtTime(it.endedAt)} (${fmtDur(it.endedAt - it.startedAt)})` : ""}</span></div>
-      ${it.sets.length ? `<ol class="done-sets">${it.sets.map((x, k) => `<li><span>${k + 1}</span><b>${fmtSet(it, plan, x)}</b><span class="muted">${fmtTime(x.t)}</span></li>`).join("")}</ol>` : `<p class="muted small">Сделай подход и нажми «Подход сделан».</p>`}
+      <ol class="done-sets">${Array.from({ length: Math.max(plan.sets, it.sets.length) }, (_, k) => {
+        const x = it.sets[k];
+        if (x) return `<li><span>${k + 1}</span><b>${fmtSet(it, plan, x)}</b><span class="muted">${k >= plan.sets ? "доп. · " : ""}${fmtTime(x.t)}</span></li>`;
+        return `<li class="todo ${k === it.sets.length && running ? "now" : ""}"><span>${k + 1}</span><span>${k === it.sets.length && running ? "сейчас" : "впереди"}</span><span>${repsText(plan)}</span></li>`;
+      }).join("")}</ol>
       ${running ? `
-        <form class="entry" data-idx="${idx}">
+        ${!doneEnough || extraSet[idx] ? `<form class="entry" data-idx="${idx}">
           ${it.superset ? `<p class="lbl">${esc(EXERCISES[it.ex].name)}</p>` : ""}
           ${setInputs(it.ex, plan, d, "")}
           ${it.superset ? `<p class="lbl">${esc(EXERCISES[it.superset].name)}</p>${setInputs(it.superset, plan, d, "2")}` : ""}
-          <button class="btn ${doneEnough ? "" : "primary"} wide big" type="submit">✓ Подход ${it.sets.length + 1} сделан</button>
-        </form>
+          <button class="btn ${doneEnough ? "" : "primary"} wide big" type="submit">✓ Подход ${it.sets.length + 1}${doneEnough ? " (дополнительный)" : ` из ${plan.sets}`} сделан</button>
+        </form>` : `<p class="done-msg">Все ${plan.sets} ${plural(plan.sets, "подход", "подхода", "подходов")} по программе сделаны.</p>`}
         ${it.sets.length ? `<button class="link" data-act="undo">Отменить последний подход</button>` : ""}
-        <button class="btn ${doneEnough ? "primary" : ""} wide" data-act="end-item">■ Закончить упражнение</button>`
+        <button class="btn ${doneEnough ? "primary big" : ""} wide" data-act="end-item">■ Закончить упражнение</button>
+        ${doneEnough && !extraSet[idx] ? `<button class="link" data-act="extra-set">+ Сделать дополнительный подход</button>` : ""}`
       : `<button class="link" data-act="reopen">Продолжить это упражнение</button>`}
     </section>` : ""}
 
@@ -350,7 +360,7 @@ document.addEventListener("click", async (e) => {
       if (a) store.discardSession();
       store.startSession(el.dataset.day);
       Object.keys(draft).forEach((k) => delete draft[k]);
-      Object.keys(supersetTab).forEach((k) => delete supersetTab[k]);
+      [supersetTab, extraSet].forEach((o) => Object.keys(o).forEach((k) => delete o[k]));
       try { navigator.storage?.persist?.(); } catch (err) { /* не важно */ }
       return go("#/w");
     }
@@ -360,6 +370,7 @@ document.addEventListener("click", async (e) => {
     case "reopen": store.startItem(idx); return route();
     case "undo": store.removeLastSet(idx); return route();
     case "tab": supersetTab[idx] = +el.dataset.i; return route();
+    case "extra-set": extraSet[idx] = true; return route();
     case "rest-add": store.extendRest(30); return renderRest();
     case "rest-stop": store.stopRest(); return renderRest();
     case "finish": {
