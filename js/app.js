@@ -95,7 +95,7 @@ function renderHome() {
     <h2>Данные</h2>
     <div class="grid2">
       <button class="btn" data-act="backup">Скачать копию (JSON)</button>
-      <label class="btn">Восстановить из копии<input type="file" accept="application/json,.json" hidden data-act="restore"></label>
+      <label class="btn">Восстановить из копии<input type="file" hidden data-act="restore"></label>
     </div>
     ${installPrompt ? `<button class="btn primary wide" data-act="install">Установить на главный экран</button>` : ""}
     <p class="muted small">Записи хранятся только на этом телефоне. Время от времени скачивай копию.</p>`;
@@ -341,10 +341,19 @@ document.addEventListener("submit", (e) => {
 
 document.addEventListener("change", async (e) => {
   if (e.target.dataset.act !== "restore" || !e.target.files[0]) return;
+  // без accept: на Android скачанный .json часто имеет тип «неизвестный файл» и в выборе неактивен
+  const file = e.target.files[0];
+  e.target.value = "";
+  const text = await file.text();
   try {
-    const n = store.importJSON(await e.target.files[0].text());
-    alert(`Восстановлено тренировок: ${n}`);
-  } catch (err) { alert("Не получилось прочитать файл: " + err.message); }
+    const { added, total } = store.importJSON(text);
+    alert(added ? `Добавлено тренировок: ${added}. Всего в истории: ${total}.` : `Все тренировки из этой копии уже есть. Всего в истории: ${total}.`);
+  } catch (err) {
+    const isMd = /\.md$/i.test(file.name) || text.trimStart().startsWith("---");
+    alert(isMd
+      ? "Это экспорт для Obsidian (.md), из него восстановить нельзя.\n\nНужна резервная копия: на старом телефоне на главной нажми «Скачать копию (JSON)» — файл называется trenirovki-backup-….json."
+      : `Не получилось прочитать файл «${file.name}». Нужна резервная копия trenirovki-backup-….json.`);
+  }
   route();
 });
 

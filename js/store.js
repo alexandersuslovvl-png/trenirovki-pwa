@@ -126,10 +126,14 @@ export function exportJSON() {
   return JSON.stringify({ app: "trenirovki-pwa", version: 1, exportedAt: new Date().toISOString(), ...state }, null, 1);
 }
 
+// Добавляет тренировки из копии к текущим (по id), ничего не удаляя.
+// Незаконченная тренировка из копии не переносится — её нельзя продолжить на другом телефоне.
 export function importJSON(text) {
   const d = JSON.parse(text);
   if (!d || !Array.isArray(d.sessions)) throw new Error("В файле нет тренировок");
-  state = { sessions: d.sessions, activeId: d.activeId || null, rest: null };
+  const have = new Set(state.sessions.map((s) => s.id));
+  const fresh = d.sessions.filter((s) => s && s.id && s.endedAt && Array.isArray(s.items) && !have.has(s.id));
+  state.sessions.push(...fresh);
   save();
-  return state.sessions.length;
+  return { added: fresh.length, total: state.sessions.length };
 }
