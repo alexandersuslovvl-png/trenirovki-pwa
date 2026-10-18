@@ -344,7 +344,11 @@ document.addEventListener("change", async (e) => {
   // без accept: на Android скачанный .json часто имеет тип «неизвестный файл» и в выборе неактивен
   const file = e.target.files[0];
   e.target.value = "";
-  const text = await file.text();
+  let text;
+  try { text = await file.text(); } catch (err) {
+    alert(`Телефон не дал прочитать файл «${file.name}» (${err.name}).\n\nСохрани файл в «Загрузки» (в Telegram: ⋮ → «Сохранить в загрузки») и выбери его оттуда.`);
+    return;
+  }
   try {
     const { added, total } = store.importJSON(text);
     alert(added ? `Добавлено тренировок: ${added}. Всего в истории: ${total}.` : `Все тренировки из этой копии уже есть. Всего в истории: ${total}.`);
