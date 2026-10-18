@@ -1,5 +1,5 @@
 // Сгенерировано tools/build_sw.py — не редактировать вручную.
-const CACHE = "trenirovki-c0150bd63c";
+const CACHE = "trenirovki-6ecc03ebde";
 const ASSETS = [
   "./",
   "index.html",

@@ -146,6 +146,14 @@ button, .btn { font: inherit; color: inherit; cursor: pointer; }
 .done-sets li > span:first-child { color: var(--muted); }
 .done-sets li.todo { background: none; border: 1px dashed var(--line); color: var(--muted); }
 .done-sets li.todo.now { border-color: var(--accent); color: var(--text); }
+.restore-status { margin: 10px 0 0; padding: 10px 14px; border-radius: 12px; background: var(--surface-2); font-size: 14px; }
+.restore-status[hidden] { display: none; }
+#paste-data {
+  width: 100%; margin-top: 10px; padding: 10px 12px; border-radius: 12px; resize: vertical;
+  font: 13px/1.4 ui-monospace, monospace; color: var(--text); background: var(--bg); border: 1px solid var(--line);
+}
+.tech .btn.wide { margin-top: 10px; }
+.tech .btn.wide:last-child { margin-bottom: 14px; }
 .warm-clock { display: flex; flex-direction: column; align-items: center; padding: 18px; background: var(--surface); border-radius: var(--radius); }
 .warm-clock b { font-size: 48px; font-variant-numeric: tabular-nums; line-height: 1.1; }
 .done-msg { margin: 12px 0 0; padding: 12px 14px; border-radius: 12px; background: rgba(76, 195, 138, .14); color: var(--ok); font-weight: 600; }
