@@ -1,5 +1,5 @@
 // Сгенерировано tools/build_sw.py — не редактировать вручную.
-const CACHE = "trenirovki-6ecc03ebde";
+const CACHE = "trenirovki-73e1e0bbbc";
 const ASSETS = [
   "./",
   "index.html",
@@ -80,6 +80,7 @@ const ASSETS = [
   "img/Wide-Grip_Lat_Pulldown-1.jpg",
   "icons/icon-192.png",
   "icons/icon-512.png",
+  "icons/icon-maskable-192.png",
   "icons/icon-maskable-512.png"
 ];
 
