@@ -1,4 +1,4 @@
-import { EXERCISES, PROGRAM } from "./data.js";
+import { EXERCISES, PROGRAM, MONTH } from "./data.js";
 import { muscleMap, MUSCLE_NAMES } from "./muscles.js";
 import * as store from "./store.js";
 import { toMarkdown, shareOrDownload, fmtDate, fmtTime, fmtDur, fmtSet, tonnage, setCount } from "./export.js";
@@ -78,6 +78,29 @@ document.addEventListener("visibilitychange", () => { if (document.visibilitySta
 let installPrompt = null;
 window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); installPrompt = e; if (!location.hash || location.hash === "#/") renderHome(); });
 
+// План на месяц: 4 недели × A/B/C, сделанные отмечены датой, текущая подсвечена
+function monthBlock(active) {
+  const pos = store.monthPosition();
+  const done = pos.doneInMonth;
+  const deload = pos.week === MONTH.deload;
+  const days = Object.keys(PROGRAM);
+  const rows = Array.from({ length: MONTH.weeks }, (_, w) => {
+    const cells = Array.from({ length: MONTH.perWeek }, (_, k) => {
+      const i = w * MONTH.perWeek + k;
+      const s = done[i];
+      if (s) return `<span class="slot done"><b>${s.day}</b><small>${new Date(s.startedAt).getDate()}.${String(new Date(s.startedAt).getMonth() + 1).padStart(2, "0")}</small></span>`;
+      const cur = i === done.length;
+      return `<span class="slot ${cur ? (active ? "live" : "next") : ""}"><b>${days[i % days.length]}</b><small>${cur ? (active ? "идёт" : "сейчас") : ""}</small></span>`;
+    }).join("");
+    return `<div class="week ${w + 1 === MONTH.deload ? "deload" : ""}"><span class="wk">Нед. ${w + 1}${w + 1 === MONTH.deload ? "<small>разгрузка</small>" : ""}</span>${cells}</div>`;
+  }).join("");
+  return `<section class="month">
+    <div class="month-head"><b>Месяц ${pos.month} · неделя ${pos.week} из ${MONTH.weeks}</b><span class="muted small">тренировка ${pos.num} из ${pos.total}</span></div>
+    ${rows}
+    ${deload ? `<p class="muted small">Разгрузочная неделя: в каждом упражнении на подход меньше, вес прежний. Тело восстанавливается перед следующим месяцем.</p>` : ""}
+  </section>`;
+}
+
 function renderHome() {
   const a = store.active();
   const next = store.nextDay();
@@ -90,6 +113,7 @@ function renderHome() {
         <span class="muted">Начата в ${fmtTime(a.startedAt)} · подходов: ${setCount(a)}</span>
         <span class="btn primary">Продолжить</span>
       </button>` : ""}
+    ${monthBlock(a)}
     <h2>${a ? "Или начать другую" : "Начать тренировку"}</h2>
     <div class="days">
       ${Object.entries(PROGRAM).map(([d, p]) => `
@@ -125,8 +149,9 @@ function renderWorkout() {
   const firstOpen = s.items.findIndex((it) => !it.endedAt);
   $app.innerHTML = `
     <header class="top"><button class="back" data-go="#/">←</button>
-      <div><h1>День ${s.day}</h1><span class="muted">${esc(day.title)}</span></div>
+      <div><h1>День ${s.day}</h1><span class="muted">${s.week ? `Неделя ${s.week} · ` : ""}${esc(day.title)}</span></div>
       <span class="timer" data-elapsed="${s.startedAt}"></span></header>
+    ${s.deload ? `<p class="note">Разгрузочная неделя: в каждом упражнении на подход меньше, вес прежний.</p>` : ""}
     <ol class="list">
       ${s.items.map((it, i) => {
         const p = store.planOf(s, i);

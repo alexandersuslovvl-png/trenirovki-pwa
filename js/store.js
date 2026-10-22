@@ -1,5 +1,5 @@
 // Хранилище тренировок в localStorage. Все времена — метки Date.now().
-import { EXERCISES, PROGRAM } from "./data.js";
+import { EXERCISES, PROGRAM, MONTH } from "./data.js";
 
 const KEY = "gym.v1";
 const DAYS = ["A", "B", "C"];
@@ -39,13 +39,34 @@ export function nextDay() {
   return last ? DAYS[(DAYS.indexOf(last.day) + 1) % DAYS.length] : "A";
 }
 
+/* ---------- месячный цикл ---------- */
+// Законченные тренировки текущего цикла (с MONTH.start), по порядку
+export function monthSessions() {
+  const start = new Date(MONTH.start + "T00:00:00").getTime();
+  return finished().filter((s) => s.startedAt >= start).sort((a, b) => a.startedAt - b.startedAt);
+}
+
+// Где мы в цикле: какой месяц, неделя и номер тренировки следующей (или идущей) тренировки
+export function monthPosition() {
+  const total = MONTH.weeks * MONTH.perWeek;
+  const n = monthSessions().length;
+  const idx = n % total;
+  return {
+    month: Math.floor(n / total) + 1, week: Math.floor(idx / MONTH.perWeek) + 1,
+    num: idx + 1, total, doneInMonth: monthSessions().slice(n - idx),
+  };
+}
+
 export function startSession(day) {
+  const pos = monthPosition();
+  const deload = pos.week === MONTH.deload;
   const s = {
-    id: uid(), day, startedAt: Date.now(), endedAt: null,
-    items: PROGRAM[day].items.map((it) => ({
-      ex: it.ex, superset: it.superset || null, plan: { ...it }, uni: defaultUni(it.ex, it.superset),
-      startedAt: null, endedAt: null, sets: [],
-    })),
+    id: uid(), day, startedAt: Date.now(), endedAt: null, month: pos.month, week: pos.week, deload,
+    items: PROGRAM[day].items.map((it) => {
+      // разгрузочная неделя: на подход меньше, вес прежний
+      const plan = deload && !it.warmup && it.sets > 1 ? { ...it, sets: it.sets - 1, deload: true } : { ...it };
+      return { ex: it.ex, superset: it.superset || null, plan, uni: defaultUni(it.ex, it.superset), startedAt: null, endedAt: null, sets: [] };
+    }),
   };
   state.sessions.push(s);
   state.activeId = s.id;

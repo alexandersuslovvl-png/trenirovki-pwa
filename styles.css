@@ -146,6 +146,22 @@ button, .btn { font: inherit; color: inherit; cursor: pointer; }
 .done-sets li > span:first-child { color: var(--muted); }
 .done-sets li.todo { background: none; border: 1px dashed var(--line); color: var(--muted); }
 .done-sets li.todo.now { border-color: var(--accent); color: var(--text); }
+/* план на месяц */
+.month { margin-top: 8px; padding: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.month-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.week { display: grid; grid-template-columns: 74px repeat(3, 1fr); gap: 6px; align-items: center; margin-top: 6px; }
+.week .wk { font-size: 13px; color: var(--muted); display: flex; flex-direction: column; line-height: 1.2; }
+.week .wk small { font-size: 11px; }
+.slot {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 44px;
+  border-radius: 10px; border: 1px dashed var(--line); color: var(--muted); line-height: 1.15;
+}
+.slot b { font-size: 16px; }
+.slot small { font-size: 11px; min-height: 13px; }
+.slot.done { border: 0; background: rgba(76, 195, 138, .16); color: var(--ok); }
+.slot.next { border: 1px solid var(--accent); color: var(--text); }
+.slot.live { border: 0; background: var(--accent); color: var(--accent-ink); }
+.week.deload .slot:not(.done) { border-style: dotted; }
 .uni-seg { margin: 0; }
 .side-badge {
   display: inline-block; margin: 0 0 10px; padding: 4px 12px; border-radius: 99px;
