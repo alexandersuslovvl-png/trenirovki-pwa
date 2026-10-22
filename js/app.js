@@ -105,19 +105,9 @@ function renderHome() {
     <h2>Данные</h2>
     <div class="grid2">
       <button class="btn" data-act="backup">Скачать копию (JSON)</button>
-      <label class="btn" data-act="restore-pick">Восстановить из копии<input type="file" hidden data-act="restore"></label>
+      <label class="btn">Восстановить из копии<input type="file" hidden data-act="restore"></label>
     </div>
     <p id="restore-status" class="restore-status" ${getStatus() ? "" : "hidden"}>${esc(getStatus())}</p>
-    <details class="tech">
-      <summary>Перенос на другой телефон без файла</summary>
-      <ol class="small">
-        <li>На старом телефоне нажми «Скопировать данные» и отправь скопированную строку себе (WhatsApp, почта, заметки, Telegram «Избранное»).</li>
-        <li>На новом телефоне скопируй эту строку, вставь в поле ниже и нажми «Восстановить».</li>
-      </ol>
-      <button class="btn wide" data-act="copy-data">Скопировать данные</button>
-      <textarea id="paste-data" rows="3" placeholder="Вставь сюда строку, начинается с TRN1."></textarea>
-      <button class="btn primary wide" data-act="paste-restore">Восстановить из строки</button>
-    </details>
     ${installPrompt ? `<button class="btn primary wide" data-act="install">Установить на главный экран</button>` : ""}
     <p class="muted small">Записи хранятся только на этом телефоне. Время от времени скачивай копию.</p>`;
 }
@@ -404,22 +394,6 @@ function setStatus(msg) {
   if (el) { el.textContent = msg; el.hidden = !msg; }
 }
 
-// Сжатая строка для переноса через мессенджер: «TRN1.» + base64(gzip(JSON))
-async function packData() {
-  const gz = new Blob([store.exportJSON()]).stream().pipeThrough(new CompressionStream("gzip"));
-  const bytes = new Uint8Array(await new Response(gz).arrayBuffer());
-  let bin = "";
-  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-  return "TRN1." + btoa(bin);
-}
-async function unpackData(text) {
-  const t = text.trim();
-  if (!t.startsWith("TRN1.")) return t;
-  const bin = atob(t.slice(5).replace(/\s+/g, ""));
-  const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
-  return new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"))).text();
-}
-
 function restoreFrom(text, name) {
   try {
     const { added, total } = store.importJSON(text);
@@ -427,7 +401,7 @@ function restoreFrom(text, name) {
   } catch (err) {
     const isMd = /\.md$/i.test(name) || text.trimStart().startsWith("---");
     setStatus(isMd
-      ? "Это экспорт для Obsidian (.md), из него восстановить нельзя. Нужна резервная копия trenirovki-backup-….json или строка из «Скопировать данные»."
+      ? "Это экспорт для Obsidian (.md), из него восстановить нельзя. Нужна резервная копия trenirovki-backup-….json."
       : `Не получилось прочитать «${name}»: это не копия данных приложения.`);
   }
   route();
@@ -441,7 +415,7 @@ document.addEventListener("change", async (e) => {
   setStatus(`Получен файл «${file.name}» (${Math.round(file.size / 1024)} КБ), читаю…`);
   let text;
   try { text = await file.text(); } catch (err) {
-    setStatus(`Телефон не дал прочитать файл «${file.name}» (${err.name}). Сохрани его в «Загрузки» и выбери оттуда или воспользуйся переносом без файла ниже.`);
+    setStatus(`Телефон не дал прочитать файл «${file.name}» (${err.name}). Сохрани его в «Загрузки» и выбери оттуда.`);
     return;
   }
   restoreFrom(text, file.name);
@@ -501,28 +475,6 @@ document.addEventListener("click", async (e) => {
     case "delete":
       if (confirm("Удалить эту тренировку из истории?")) { store.deleteSession(el.dataset.id); go("#/h"); }
       return;
-    case "restore-pick":
-      setStatus("Открыт выбор файла… Если после выбора эта надпись не изменилась, телефон перезапустил страницу — воспользуйся переносом без файла ниже.");
-      return;
-    case "copy-data": {
-      const packed = await packData();
-      const area = document.getElementById("paste-data");
-      try {
-        await navigator.clipboard.writeText(packed);
-        setStatus(`Данные скопированы (${packed.length} символов). Отправь их себе и вставь на новом телефоне.`);
-      } catch (err) {
-        area.value = packed; area.focus(); area.select();
-        setStatus("Не удалось скопировать автоматически: строка выделена в поле ниже — скопируй её вручную.");
-      }
-      return;
-    }
-    case "paste-restore": {
-      const raw = document.getElementById("paste-data").value;
-      if (!raw.trim()) return setStatus("Поле пустое — вставь строку, которая начинается с TRN1.");
-      try { restoreFrom(await unpackData(raw), "строка"); }
-      catch (err) { setStatus("Строка повреждена или скопирована не целиком. Скопируй её ещё раз полностью."); }
-      return;
-    }
     case "backup": return shareOrDownload(`trenirovki-backup-${fmtDate(Date.now())}.json`, store.exportJSON(), "application/json");
     case "install":
       if (installPrompt) { installPrompt.prompt(); await installPrompt.userChoice; installPrompt = null; renderHome(); }
