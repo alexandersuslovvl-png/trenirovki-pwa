@@ -163,12 +163,14 @@ export function deleteSession(id) {
 }
 
 export function startRest(seconds, label = "Отдых") {
-  state.rest = seconds > 0 ? { endsAt: Date.now() + seconds * 1000, fired: false, label } : null;
+  state.rest = seconds > 0 ? { endsAt: Date.now() + seconds * 1000, dur: seconds, fired: false, label } : null;
   save();
 }
 export function extendRest(seconds) {
   if (!state.rest) return;
+  const left = Math.max(0, (state.rest.endsAt - Date.now()) / 1000);
   state.rest.endsAt = Math.max(state.rest.endsAt, Date.now()) + seconds * 1000;
+  state.rest.dur = Math.max(state.rest.dur || 0, left + seconds);
   state.rest.fired = false;
   save();
 }

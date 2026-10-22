@@ -1,5 +1,5 @@
 // Сгенерировано tools/build_sw.py — не редактировать вручную.
-const CACHE = "trenirovki-f92a34a520";
+const CACHE = "trenirovki-86a9fb7d06";
 const ASSETS = [
   "./",
   "index.html",
@@ -83,7 +83,9 @@ const ASSETS = [
   "icons/icon-192.png",
   "icons/icon-512.png",
   "icons/icon-maskable-192.png",
-  "icons/icon-maskable-512.png"
+  "icons/icon-maskable-512.png",
+  "fonts/manrope-cyrillic.woff2",
+  "fonts/manrope-latin.woff2"
 ];
 
 self.addEventListener("install", (e) => {

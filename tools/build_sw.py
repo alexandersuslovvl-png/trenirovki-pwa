@@ -6,7 +6,7 @@ import hashlib, os, pathlib
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 FILES = ["./", "index.html", "styles.css", "manifest.webmanifest"]
-for folder in ["js", "img", "icons"]:
+for folder in ["js", "img", "icons", "fonts"]:
     FILES += sorted(p.relative_to(ROOT).as_posix() for p in (ROOT / folder).iterdir() if p.is_file())
 
 h = hashlib.sha1()

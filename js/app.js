@@ -89,16 +89,33 @@ function monthBlock(active) {
     const cells = Array.from({ length: MONTH.perWeek }, (_, k) => {
       const i = w * MONTH.perWeek + k;
       const s = done[i];
-      if (s) return `<span class="slot done"><b>${s.day}</b><small>${new Date(s.startedAt).getDate()}.${String(new Date(s.startedAt).getMonth() + 1).padStart(2, "0")}</small></span>`;
+      if (s) return `<span class="slot done"><b>${s.day} ✓</b><small>${new Date(s.startedAt).getDate()}.${String(new Date(s.startedAt).getMonth() + 1).padStart(2, "0")}</small></span>`;
       const cur = i === done.length;
       return `<span class="slot ${cur ? (active ? "live" : "next") : ""}"><b>${days[i % days.length]}</b><small>${cur ? (active ? "идёт" : "сейчас") : ""}</small></span>`;
     }).join("");
     return `<div class="week ${w + 1 === MONTH.deload ? "deload" : ""}"><span class="wk">Нед. ${w + 1}${w + 1 === MONTH.deload ? "<small>разгрузка</small>" : ""}</span>${cells}</div>`;
   }).join("");
   return `<section class="month">
-    <div class="month-head"><b>Месяц ${pos.month} · неделя ${pos.week} из ${MONTH.weeks}</b><span class="muted small">тренировка ${pos.num} из ${pos.total}</span></div>
+    <div class="month-head"><b>План на месяц</b><span class="muted small">${done.length} из ${pos.total} · неделя ${pos.week} из ${MONTH.weeks}</span></div>
+    <div class="bar"><i style="width:${Math.round((done.length / pos.total) * 100)}%"></i></div>
     ${rows}
     ${deload ? `<p class="muted small">Разгрузочная неделя: в каждом упражнении на подход меньше, вес прежний. Тело восстанавливается перед следующим месяцем.</p>` : ""}
+  </section>`;
+}
+
+// Главный блок: следующая тренировка или идущая
+function heroBlock(a, next) {
+  const pos = store.monthPosition();
+  const day = a ? a.day : next;
+  return `<section class="hero">
+    <span class="ghost" aria-hidden="true">${day}</span>
+    <small>${a ? `Идёт тренировка · начата в ${fmtTime(a.startedAt)}` : `Следующая · тренировка ${pos.num} из ${pos.total}`}</small>
+    <div class="d">День ${day}</div>
+    <p>${esc(PROGRAM[day].title)}</p>
+    <div class="hero-actions">
+      ${a ? `<button class="go" data-go="#/w">Продолжить</button><span class="hero-meta">подходов: ${setCount(a)}</span>`
+        : `<button class="go" data-act="start" data-day="${day}">▶ Начать</button><button class="ghost-btn" data-go="#/p/${day}">Упражнения</button>`}
+    </div>
   </section>`;
 }
 
@@ -106,22 +123,19 @@ function renderHome() {
   const a = store.active();
   const next = store.nextDay();
   const hist = store.finished();
+  const heroDay = a ? a.day : next;
   $app.innerHTML = `
-    <header class="top"><h1>Тренировки</h1></header>
-    ${a ? `<button class="card resume" data-act="resume">
-        <span class="badge live">идёт</span>
-        <b>День ${a.day} · ${esc(PROGRAM[a.day].title)}</b>
-        <span class="muted">Начата в ${fmtTime(a.startedAt)} · подходов: ${setCount(a)}</span>
-        <span class="btn primary">Продолжить</span>
-      </button>` : ""}
+    <header class="top home-top"><h1>Тренировки</h1><span class="muted small">Месяц ${store.monthPosition().month} · неделя ${store.monthPosition().week}</span></header>
+    ${heroBlock(a, next)}
     ${monthBlock(a)}
-    <h2>${a ? "Или начать другую" : "Начать тренировку"}</h2>
+    <h2>Другие дни</h2>
     <div class="days">
-      ${Object.entries(PROGRAM).map(([d, p]) => `
-        <button class="card day ${d === next && !a ? "next" : ""}" data-go="#/p/${d}">
+      ${Object.entries(PROGRAM).filter(([d]) => d !== heroDay).map(([d, p]) => `
+        <button class="card day" data-go="#/p/${d}">
           <span class="letter">${d}</span>
           <span class="day-body"><b>${esc(p.title)}</b>
-          <span class="muted">разминка + ${p.items.filter((x) => !x.warmup).length} упражнений${d === next ? " · следующая по очереди" : ""}</span></span>
+          <span class="muted">разминка + ${p.items.filter((x) => !x.warmup).length} упражнений</span></span>
+          <span class="chev">›</span>
         </button>`).join("")}
     </div>
     <h2>История</h2>
@@ -185,29 +199,45 @@ function defaults(idx) {
   };
 }
 
-function info(exKey) {
+// Фото-шапка упражнения: два кадра сменяют друг друга, название поверх фото
+function exHero(exKey, top, title) {
+  const ex = EXERCISES[exKey];
+  return `<div class="ph">
+    <img src="${ex.img[0]}" alt="${esc(ex.name)}, положение 1"><img src="${ex.img[1]}" alt="${esc(ex.name)}, положение 2" class="f2">
+    <div class="ph-top">${top}</div>
+    <div class="ph-ttl"><h1>${esc(title)}</h1><small>${esc(ex.equipment)}</small></div>
+  </div>`;
+}
+
+function exTags(exKey, extra = "") {
+  const ex = EXERCISES[exKey];
+  return `<div class="tags">${ex.primary.map((k) => `<span class="tag p">${MUSCLE_NAMES[k]}</span>`).join("")}${
+    ex.secondary.map((k) => `<span class="tag">${MUSCLE_NAMES[k]}</span>`).join("")}${extra}</div>`;
+}
+
+// Подробности под действиями: схема мышц, техника, ошибки
+function exDetails(exKey, techOpen) {
   const ex = EXERCISES[exKey];
   const names = (keys) => keys.map((k) => MUSCLE_NAMES[k]).join(", ");
   return `
-    <div class="anim"><img src="${ex.img[0]}" alt="${esc(ex.name)}, положение 1"><img src="${ex.img[1]}" alt="${esc(ex.name)}, положение 2" class="f2"></div>
-    <div class="eq"><span class="lbl">Тренажёр</span>${esc(ex.equipment)}</div>
-    <div class="muscles">${muscleMap(ex.primary, ex.secondary)}
-      <div class="legend">
-        <p><i class="dot pri"></i><b>Основные:</b> ${names(ex.primary)}</p>
-        ${ex.secondary.length ? `<p><i class="dot sec"></i><b>Помогают:</b> ${names(ex.secondary)}</p>` : ""}
-        <p class="muted small">${esc(ex.muscleText)}</p>
-      </div></div>
     ${ex.note ? `<p class="note">${esc(ex.note)}</p>` : ""}
-    <details class="tech" ${store.active()?.items.some((i) => i.sets.length) ? "" : "open"}>
+    <details class="tech" ${techOpen ? "open" : ""}>
       <summary>Техника выполнения</summary><ol>${ex.steps.map((s) => `<li>${esc(s)}</li>`).join("")}</ol></details>
-    <details class="tech"><summary>Типичные ошибки</summary><ul>${ex.mistakes.map((s) => `<li>${esc(s)}</li>`).join("")}</ul></details>`;
+    <details class="tech"><summary>Типичные ошибки</summary><ul>${ex.mistakes.map((s) => `<li>${esc(s)}</li>`).join("")}</ul></details>
+    <details class="tech" open><summary>Какие мышцы работают</summary>
+      <div class="muscles">${muscleMap(ex.primary, ex.secondary)}
+        <div class="legend">
+          <p><i class="dot pri"></i><b>Основные:</b> ${names(ex.primary)}</p>
+          ${ex.secondary.length ? `<p><i class="dot sec"></i><b>Помогают:</b> ${names(ex.secondary)}</p>` : ""}
+          <p class="muted small">${esc(ex.muscleText)}</p>
+        </div></div></details>`;
 }
 
 function stepper(name, label, value, step, unit) {
   return `<div class="stepper"><span class="lbl">${esc(label)}</span>
-    <div class="ctl"><button type="button" data-step="${name}" data-d="${-step}">−</button>
-    <input name="${name}" type="number" inputmode="decimal" step="any" value="${esc(value)}" placeholder="0"><span class="unit">${unit}</span>
-    <button type="button" data-step="${name}" data-d="${step}">+</button></div></div>`;
+    <div class="ctl"><button type="button" data-step="${name}" data-d="${-step}" aria-label="Меньше">−</button>
+    <label class="val"><input name="${name}" type="number" inputmode="decimal" step="any" value="${esc(value)}" placeholder="0"><span class="unit">${unit}</span></label>
+    <button type="button" data-step="${name}" data-d="${step}" aria-label="Больше">+</button></div></div>`;
 }
 
 function setInputs(exKey, plan, d, suffix) {
@@ -249,62 +279,62 @@ function renderExercise(idx) {
         `<button class="${uni === on ? "on" : ""}" data-act="uni" data-on="${on ? 1 : 0}">${label}</button>`).join("")}</div>
        ${uni ? `<p class="muted small">Каждый подход: левая → ${SWITCH_REST} с на смену → правая → отдых.</p>` : ""}`
     : uni ? `<p class="muted small">По очереди: левая ${limb.one} → ${SWITCH_REST} с на смену → правая → отдых.</p>` : "";
+  const top = `<button class="chip-btn" data-go="#/w" aria-label="К списку">←</button>
+    <span class="chip">${idx + 1} / ${s.items.length}</span><span class="chip timer" data-elapsed="${s.startedAt}"></span>`;
+  const setNo = Math.min(it.sets.length + 1, plan.sets);
 
   $app.innerHTML = `
-    <header class="top"><button class="back" data-go="#/w">←</button>
-      <div><span class="muted">${idx + 1} / ${s.items.length} · День ${s.day}</span><h1 class="ex-title">${esc(exName(it))}</h1></div>
-      <span class="timer" data-elapsed="${s.startedAt}"></span></header>
+    ${exHero(shownEx, top, exName(it))}
+    <div class="body">
+      ${it.superset ? `<div class="seg">${[it.ex, it.superset].map((k, i) => `<button class="${i === tab ? "on" : ""}" data-act="tab" data-i="${i}">${esc(EXERCISES[k].name)}</button>`).join("")}</div>` : ""}
+      ${exTags(shownEx, uni ? `<span class="tag">${limb.alt}</span>` : "")}
 
-    ${it.superset ? `<div class="seg">${[it.ex, it.superset].map((k, i) => `<button class="${i === tab ? "on" : ""}" data-act="tab" data-i="${i}">${esc(EXERCISES[k].name)}</button>`).join("")}</div>` : ""}
-    ${info(shownEx)}
-
-    <section class="plan">
-      <div><span class="lbl">Цель по программе</span><b>${targetLong(plan)}</b>${plan.side ? ` <span class="muted">${esc(plan.side)}</span>` : ""}${plan.rest ? `<span class="muted"> · отдых ${clock(plan.rest)}</span>` : ""}</div>
+      ${plan.warmup ? `<div class="now"><b>Разминка ${repsText(plan)}</b></div>` : `
+        <div class="prog">${Array.from({ length: Math.max(plan.sets, it.sets.length) }, (_, k) =>
+          `<i class="${k < it.sets.length ? "d" : k === it.sets.length && running ? "n" : ""}"></i>`).join("")}</div>
+        <div class="now"><b>${doneEnough && !it.half ? "Все подходы сделаны" : `Подход ${setNo} из ${plan.sets}`}</b><span>цель ${range(plan)}${plan.unit === "sec" ? " с" : ""}${plan.side ? " " + esc(plan.side) : ""} · отдых ${clock(plan.rest)}</span></div>`}
+      ${last ? `<p class="last">Прошлый раз: <b>${last.sets.map((x) => fmtSet(it, plan, x)).join(" · ")}</b></p>` : ""}
+      ${progressHint(it, plan)}
       ${plan.note ? `<p class="muted small">${esc(plan.note)}</p>` : ""}
       ${uniBlock}
-      ${last ? `<div><span class="lbl">Прошлый раз, ${fmtDate(last.date)}</span>${last.sets.map((x) => fmtSet(it, plan, x)).join(" · ")}</div>` : ""}
-      ${progressHint(it, plan)}
-    </section>
 
-    ${!it.startedAt ? `<button class="btn primary wide big" data-act="start-item">▶ Начать ${plan.warmup ? "разминку" : "упражнение"}</button>` : ""}
+      ${!it.startedAt ? `<button class="btn primary wide big" data-act="start-item">▶ Начать ${plan.warmup ? "разминку" : "упражнение"}</button>` : ""}
 
-    ${plan.warmup && it.startedAt ? `<section class="sets">
-      ${running ? `<div class="warm-clock"><span class="lbl">Идёт разминка · начата в ${fmtTime(it.startedAt)}</span><b data-elapsed="${it.startedAt}"></b></div>
-        <button class="btn primary wide big" data-act="end-item">■ Закончить разминку</button>`
-      : `<p class="done-msg">Разминка: ${fmtTime(it.startedAt)}–${fmtTime(it.endedAt)} (${fmtDur(it.endedAt - it.startedAt)})</p>
-        <button class="link" data-act="reopen">Продолжить разминку</button>`}
-    </section>` : ""}
+      ${plan.warmup && it.startedAt ? `<section class="sets">
+        ${running ? `<div class="warm-clock"><span class="lbl">Идёт разминка · начата в ${fmtTime(it.startedAt)}</span><b data-elapsed="${it.startedAt}"></b></div>
+          <button class="btn primary wide big" data-act="end-item">■ Закончить разминку</button>`
+        : `<p class="done-msg">Разминка: ${fmtTime(it.startedAt)}–${fmtTime(it.endedAt)} (${fmtDur(it.endedAt - it.startedAt)})</p>
+          <button class="link" data-act="reopen">Продолжить разминку</button>`}
+      </section>` : ""}
 
-    ${!plan.warmup && it.startedAt ? `<section class="sets">
-      <div class="sets-head"><b>Подходы</b><span class="muted">начато в ${fmtTime(it.startedAt)}${it.endedAt ? ` · закончено в ${fmtTime(it.endedAt)} (${fmtDur(it.endedAt - it.startedAt)})` : ""}</span></div>
-      <ol class="done-sets">${Array.from({ length: Math.max(plan.sets, it.sets.length) }, (_, k) => {
-        const x = it.sets[k];
-        if (x) return `<li><span>${k + 1}</span><b>${fmtSet(it, plan, x)}</b><span class="muted">${k >= plan.sets ? "доп. · " : ""}${fmtTime(x.t)}</span></li>`;
-        const now = k === it.sets.length && running;
-        const nowText = now ? (uni ? (it.half ? `сейчас · правая (левая: ${fmtSet(it, plan, { w: it.half.w, r: it.half.r })})` : "сейчас · левая") : "сейчас") : "впереди";
-        return `<li class="todo ${now ? "now" : ""}"><span>${k + 1}</span><span>${nowText}</span><span>${repsText(plan)}</span></li>`;
-      }).join("")}</ol>
-      ${running ? `
-        ${!doneEnough || extraSet[idx] || it.half ? `<form class="entry" data-idx="${idx}">
-          ${it.superset ? `<p class="lbl">${esc(EXERCISES[it.ex].name)}</p>` : ""}
-          ${uni ? `<p class="side-badge">${it.half ? "Правая" : "Левая"} ${limb.one}</p>` : ""}
-          ${setInputs(it.ex, plan, d, "")}
-          ${it.superset ? `<p class="lbl">${esc(EXERCISES[it.superset].name)}</p>${setInputs(it.superset, plan, d, "2")}` : ""}
-          <button class="btn ${doneEnough && !it.half ? "" : "primary"} wide big" type="submit">${
-            uni && !it.half ? `✓ Левая ${limb.one} сделана`
-            : `✓ ${uni ? `Правая ${limb.one} — п` : "П"}одход ${it.sets.length + 1}${doneEnough ? " (дополнительный)" : ` из ${plan.sets}`} сделан`}</button>
-        </form>` : `<p class="done-msg">Все ${plan.sets} ${plural(plan.sets, "подход", "подхода", "подходов")} по программе сделаны.</p>`}
-        ${it.sets.length || it.half ? `<button class="link" data-act="undo">${it.half ? "Отменить левую сторону" : "Отменить последний подход"}</button>` : ""}
-        <button class="btn ${doneEnough ? "primary big" : ""} wide" data-act="end-item">■ Закончить упражнение</button>
-        ${doneEnough && !extraSet[idx] && !it.half ? `<button class="link" data-act="extra-set">+ Сделать дополнительный подход</button>` : ""}`
-      : `<button class="link" data-act="reopen">Продолжить это упражнение</button>`}
-    </section>` : ""}
+      ${!plan.warmup && it.startedAt ? `<section class="sets">
+        ${running ? `
+          ${!doneEnough || extraSet[idx] || it.half ? `<form class="entry" data-idx="${idx}">
+            ${it.superset ? `<p class="lbl ex-lbl">${esc(EXERCISES[it.ex].name)}</p>` : ""}
+            ${uni ? `<p class="side-badge">${it.half ? "Правая" : "Левая"} ${limb.one}</p>` : ""}
+            ${setInputs(it.ex, plan, d, "")}
+            ${it.superset ? `<p class="lbl ex-lbl">${esc(EXERCISES[it.superset].name)}</p>${setInputs(it.superset, plan, d, "2")}` : ""}
+            <button class="btn ${doneEnough && !it.half ? "" : "primary"} wide big" type="submit">${
+              uni && !it.half ? `✓ Левая ${limb.one} сделана`
+              : `✓ ${uni ? `Правая ${limb.one} — п` : "П"}одход ${it.sets.length + 1}${doneEnough ? " (доп.)" : ""} сделан`}</button>
+          </form>` : `<p class="done-msg">Все ${plan.sets} ${plural(plan.sets, "подход", "подхода", "подходов")} по программе сделаны.</p>`}
+          <button class="btn ${doneEnough ? "primary big" : ""} wide" data-act="end-item">■ Закончить упражнение</button>
+          ${doneEnough && !extraSet[idx] && !it.half ? `<button class="link" data-act="extra-set">+ Сделать дополнительный подход</button>` : ""}`
+        : `<p class="done-msg">Готово: ${fmtTime(it.startedAt)}–${fmtTime(it.endedAt)} (${fmtDur(it.endedAt - it.startedAt)})</p>
+           <button class="link" data-act="reopen">Продолжить это упражнение</button>`}
+        ${it.sets.length || it.half ? `<div class="sets-head"><b>Сделано</b>${running && (it.sets.length || it.half) ? `<button class="link inline" data-act="undo">${it.half ? "Отменить левую" : "Отменить последний"}</button>` : ""}</div>
+        <ol class="done-sets">${it.sets.map((x, k) => `<li><span>${k + 1}</span><b>${fmtSet(it, plan, x)}</b><span class="muted">${k >= plan.sets ? "доп. · " : ""}${fmtTime(x.t)}</span></li>`).join("")}
+          ${it.half ? `<li class="todo now"><span>${it.sets.length + 1}</span><span>левая: ${fmtSet(it, plan, { w: it.half.w, r: it.half.r })} · теперь правая</span><span></span></li>` : ""}</ol>` : ""}
+      </section>` : ""}
 
-    <nav class="pager">
-      ${idx > 0 ? `<button class="btn" data-go="#/e/${idx - 1}">← Назад</button>` : `<span></span>`}
-      ${idx < s.items.length - 1 ? `<button class="btn ${it.endedAt ? "primary" : ""}" data-go="#/e/${idx + 1}">Дальше →</button>`
-        : `<button class="btn ${it.endedAt ? "primary" : ""}" data-act="finish">Завершить тренировку</button>`}
-    </nav>`;
+      <nav class="pager">
+        ${idx > 0 ? `<button class="btn" data-go="#/e/${idx - 1}">← Назад</button>` : `<span></span>`}
+        ${idx < s.items.length - 1 ? `<button class="btn ${it.endedAt ? "primary" : ""}" data-go="#/e/${idx + 1}">Дальше →</button>`
+          : `<button class="btn ${it.endedAt ? "primary" : ""}" data-act="finish">Завершить тренировку</button>`}
+      </nav>
+
+      ${exDetails(shownEx, !s.items.some((i) => i.sets.length))}
+    </div>`;
   tickElapsed();
 }
 
@@ -321,7 +351,7 @@ function renderPreview(day) {
   const plans = store.previewPlans(day);
   const pos = store.monthPosition();
   $app.innerHTML = `
-    <header class="top"><button class="back" data-go="#/">←</button>
+    <header class="top"><button class="back" data-go="#/" aria-label="На главную">←</button>
       <div><h1>День ${day}</h1><span class="muted">Просмотр · ${esc(p.title)}</span></div></header>
     <p class="muted small">Тренировка не запущена — можно спокойно смотреть упражнения.${plans.some((x) => x.deload) ? ` Неделя ${pos.week} разгрузочная: подходов на один меньше.` : ""}</p>
     <ol class="list">
@@ -349,24 +379,25 @@ function renderPreviewExercise(day, idx) {
   const tab = supersetTab["p" + idx] || 0;
   const shownEx = it.superset && tab === 1 ? it.superset : it.ex;
   const limb = limbOf(it.ex);
+  const top = `<button class="chip-btn" data-go="#/p/${day}" aria-label="К списку">←</button><span class="chip">Просмотр · ${idx + 1} / ${plans.length}</span>`;
   $app.innerHTML = `
-    <header class="top"><button class="back" data-go="#/p/${day}">←</button>
-      <div><span class="muted">Просмотр · ${idx + 1} / ${plans.length} · День ${day}</span><h1 class="ex-title">${esc(exName(it))}</h1></div></header>
-    ${it.superset ? `<div class="seg">${[it.ex, it.superset].map((k, i) => `<button class="${i === tab ? "on" : ""}" data-act="ptab" data-i="${i}">${esc(EXERCISES[k].name)}</button>`).join("")}</div>` : ""}
-    ${info(shownEx)}
-    <section class="plan">
-      <div><span class="lbl">Цель по программе</span><b>${targetLong(plan)}</b>${plan.side ? ` <span class="muted">${esc(plan.side)}</span>` : ""}${plan.rest ? `<span class="muted"> · отдых ${clock(plan.rest)}</span>` : ""}</div>
+    ${exHero(shownEx, top, exName(it))}
+    <div class="body">
+      ${it.superset ? `<div class="seg">${[it.ex, it.superset].map((k, i) => `<button class="${i === tab ? "on" : ""}" data-act="ptab" data-i="${i}">${esc(EXERCISES[k].name)}</button>`).join("")}</div>` : ""}
+      ${exTags(shownEx)}
+      <div class="now"><b>${esc(targetLong(plan))}</b><span>${plan.side ? esc(plan.side) + " · " : ""}${plan.rest ? `отдых ${clock(plan.rest)}` : ""}</span></div>
+      ${last ? `<p class="last">Прошлый раз: <b>${last.sets.map((x) => fmtSet(it, plan, x)).join(" · ")}</b></p>` : ""}
+      ${plan.warmup ? "" : progressHint(it, plan)}
       ${plan.note ? `<p class="muted small">${esc(plan.note)}</p>` : ""}
       ${ex.uni === "always" ? `<p class="muted small">По очереди: левая ${limb.one} → ${SWITCH_REST} с на смену → правая → отдых.</p>`
         : ex.uni === "optional" && !it.superset ? `<p class="muted small">Можно делать ${limb.alt.toLowerCase()} — выбор будет перед стартом упражнения.</p>` : ""}
-      ${last ? `<div><span class="lbl">Прошлый раз, ${fmtDate(last.date)}</span>${last.sets.map((x) => fmtSet(it, plan, x)).join(" · ")}</div>` : ""}
-      ${plan.warmup ? "" : progressHint(it, plan)}
-    </section>
-    <nav class="pager">
-      ${idx > 0 ? `<button class="btn" data-go="#/p/${day}/${idx - 1}">← Назад</button>` : `<span></span>`}
-      ${idx < plans.length - 1 ? `<button class="btn" data-go="#/p/${day}/${idx + 1}">Дальше →</button>` : `<span></span>`}
-    </nav>
-    ${startButton(day)}`;
+      <nav class="pager">
+        ${idx > 0 ? `<button class="btn" data-go="#/p/${day}/${idx - 1}">← Назад</button>` : `<span></span>`}
+        ${idx < plans.length - 1 ? `<button class="btn" data-go="#/p/${day}/${idx + 1}">Дальше →</button>` : `<span></span>`}
+      </nav>
+      ${startButton(day)}
+      ${exDetails(shownEx, true)}
+    </div>`;
 }
 
 /* ---------- итог и история ---------- */
@@ -422,7 +453,9 @@ function renderRest() {
   }
   $rest.hidden = false;
   $rest.classList.toggle("over", left <= 0);
-  $rest.innerHTML = `<span class="rest-time">${left > 0 ? `${esc(r.label || "Отдых")} ${clock(left)}` : `Пора${left < -1 ? ` · +${clock(-left)}` : "!"}`}</span>
+  const share = left > 0 && r.dur ? Math.min(1, left / r.dur) : 0;
+  $rest.innerHTML = `<span class="restline" style="width:${Math.round(share * 100)}%"></span>
+    <span class="rest-time"><small>${left > 0 ? esc(r.label || "Отдых") : "Пора к подходу"}</small>${left > 0 ? clock(left) : left < -1 ? `+${clock(-left)}` : "0:00"}</span>
     <button data-act="rest-add">+30 с</button><button data-act="rest-stop">${left > 0 ? "Пропустить" : "Ок"}</button>`;
 }
 
