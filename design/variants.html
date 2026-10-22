@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Тренировки — варианты дизайна</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #e9e9ec; color: #18181b; font: 15px/1.45 Inter, system-ui, sans-serif; }
+  .page { max-width: 1280px; margin: 0 auto; padding: 32px 16px 64px; }
+  .page > h1 { font-size: 28px; margin: 0 0 6px; }
+  .page > p { margin: 0 0 28px; color: #52525b; max-width: 760px; }
+  .variant { margin-bottom: 48px; }
+  .variant h2 { font-size: 20px; margin: 0 0 4px; }
+  .variant .why { margin: 0 0 16px; color: #52525b; max-width: 820px; }
+  .phones { display: flex; gap: 24px; flex-wrap: wrap; }
+  .phone { width: 360px; height: 740px; border-radius: 40px; border: 10px solid #18181b; overflow: hidden; position: relative; flex: none; box-shadow: 0 20px 50px rgba(0,0,0,.18); }
+  .screen { height: 100%; overflow: auto; scrollbar-width: none; position: relative; }
+  .screen::-webkit-scrollbar { display: none; }
+  .cap { font-size: 13px; color: #71717a; margin: 8px 0 0 6px; }
+  .rec { background: #fff; border-radius: 16px; padding: 20px 22px; max-width: 820px; }
+  .rec h2 { margin: 0 0 8px; font-size: 20px; }
+  .rec p { margin: 0 0 8px; }
+
+  /* ============ ВАРИАНТ 1 — По учебнику: «как в Apple Фитнес» ============ */
+  .v1 { --bg:#000; --card:#1c1c1e; --card2:#2c2c2e; --text:#fff; --muted:#8e8e93; --acc:#b4ff39; --acc-ink:#0b1400; --line:#38383a;
+        background: var(--bg); color: var(--text); font-family: Inter, system-ui, sans-serif; }
+  .v1 .pad { padding: 18px 16px 90px; }
+  .v1 .large { font-size: 32px; font-weight: 800; letter-spacing: -.02em; margin: 26px 0 14px; }
+  .v1 .today { background: var(--card); border-radius: 22px; padding: 18px; display: grid; grid-template-columns: 96px 1fr; gap: 16px; align-items: center; }
+  .v1 .ring { width: 96px; height: 96px; }
+  .v1 .today small { color: var(--muted); font-size: 13px; display: block; }
+  .v1 .today b { font-size: 19px; display: block; margin: 2px 0 10px; line-height: 1.2; }
+  .v1 .pill { display: inline-flex; align-items: center; justify-content: center; height: 40px; padding: 0 20px; border-radius: 99px; background: var(--acc); color: var(--acc-ink); font-weight: 700; }
+  .v1 .dots { display: flex; gap: 6px; margin: 16px 2px 0; }
+  .v1 .dots i { flex: 1; height: 6px; border-radius: 3px; background: var(--card2); }
+  .v1 .dots i.d { background: var(--acc); } .v1 .dots i.n { background: #fff; }
+  .v1 .sect { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: .04em; margin: 26px 4px 8px; }
+  .v1 .group { background: var(--card); border-radius: 16px; overflow: hidden; }
+  .v1 .row { display: flex; align-items: center; gap: 12px; padding: 13px 14px; border-bottom: 1px solid var(--line); }
+  .v1 .row:last-child { border-bottom: 0; }
+  .v1 .ltr { width: 36px; height: 36px; border-radius: 10px; background: var(--card2); display: grid; place-items: center; font-weight: 800; }
+  .v1 .row .t { flex: 1; } .v1 .row .t small { display: block; color: var(--muted); font-size: 13px; }
+  .v1 .chev { color: var(--muted); font-size: 20px; }
+  .v1 .photo { margin: 8px 16px 0; border-radius: 22px; overflow: hidden; aspect-ratio: 3/2; background: #111; }
+  .v1 .photo img { width: 100%; height: 100%; object-fit: cover; }
+  .v1 .exh { padding: 14px 16px 0; }
+  .v1 .exh h3 { font-size: 26px; font-weight: 800; letter-spacing: -.02em; margin: 0; line-height: 1.15; }
+  .v1 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .v1 .chip { font-size: 13px; padding: 5px 10px; border-radius: 99px; background: var(--card); color: var(--muted); }
+  .v1 .chip.p { color: var(--acc); background: rgba(180,255,57,.12); }
+  .v1 .sets { margin: 16px 16px 0; }
+  .v1 .set { display: grid; grid-template-columns: 28px 1fr auto; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+  .v1 .set .ok { color: var(--acc); }
+  .v1 .set.now { background: var(--card2); }
+  .v1 .steps { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 14px 16px 0; }
+  .v1 .stp { background: var(--card); border-radius: 16px; padding: 10px 12px; text-align: center; }
+  .v1 .stp small { color: var(--muted); font-size: 12px; }
+  .v1 .stp .ctl { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; }
+  .v1 .stp .ctl span { width: 34px; height: 34px; border-radius: 50%; background: var(--card2); display: grid; place-items: center; font-size: 20px; }
+  .v1 .stp .ctl b { font-size: 26px; font-weight: 700; }
+  .v1 .big { margin: 14px 16px 0; height: 54px; border-radius: 99px; background: var(--acc); color: var(--acc-ink); display: grid; place-items: center; font-weight: 800; font-size: 17px; }
+  .v1 .float { position: absolute; left: 16px; right: 16px; bottom: 16px; background: rgba(44,44,46,.92); backdrop-filter: blur(10px); border-radius: 99px; padding: 10px 10px 10px 20px; display: flex; align-items: center; justify-content: space-between; font-weight: 700; }
+  .v1 .float span { font-variant-numeric: tabular-nums; font-size: 18px; }
+  .v1 .float i { font-style: normal; font-size: 14px; padding: 8px 14px; border-radius: 99px; background: #48484a; }
+
+  /* ============ ВАРИАНТ 2 — Доработанный: нынешний стиль, уверенней ============ */
+  .v2 { --bg:#111317; --card:#1a1d23; --card2:#252932; --line:#2c313b; --text:#f2f3f5; --muted:#949baa; --acc:#ff6a2b; --acc-ink:#1a0b04; --ok:#46c28a;
+        background: var(--bg); color: var(--text); font-family: Manrope, Inter, sans-serif; }
+  .v2 .pad { padding: 18px 16px 90px; }
+  .v2 .hello { display: flex; justify-content: space-between; align-items: center; margin-top: 18px; }
+  .v2 .hello b { font-size: 26px; font-weight: 800; letter-spacing: -.01em; }
+  .v2 .hello span { font-size: 13px; color: var(--muted); }
+  .v2 .hero { margin-top: 16px; border-radius: 24px; padding: 18px; background: linear-gradient(140deg, #ff6a2b 0%, #ff3d54 100%); color: #1a0b04; position: relative; overflow: hidden; }
+  .v2 .hero small { font-weight: 700; opacity: .75; text-transform: uppercase; letter-spacing: .06em; font-size: 12px; }
+  .v2 .hero .d { font-size: 56px; font-weight: 800; line-height: 1; margin: 6px 0 2px; }
+  .v2 .hero p { margin: 0 0 14px; font-weight: 700; }
+  .v2 .hero .go { display: inline-flex; height: 42px; align-items: center; padding: 0 18px; border-radius: 14px; background: #111317; color: #fff; font-weight: 800; }
+  .v2 .hero .ghost { position: absolute; right: -10px; bottom: -34px; font-size: 170px; font-weight: 800; opacity: .12; line-height: 1; }
+  .v2 .month { margin-top: 14px; background: var(--card); border-radius: 20px; padding: 14px; }
+  .v2 .month .h { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 10px; }
+  .v2 .month .h span { color: var(--muted); }
+  .v2 .bar { height: 8px; border-radius: 4px; background: var(--card2); overflow: hidden; margin-bottom: 12px; }
+  .v2 .bar i { display: block; height: 100%; width: 25%; background: var(--acc); border-radius: 4px; }
+  .v2 .wk { display: grid; grid-template-columns: 52px repeat(3, 1fr); gap: 6px; margin-top: 6px; align-items: center; }
+  .v2 .wk > span { font-size: 12px; color: var(--muted); }
+  .v2 .sl { height: 34px; border-radius: 10px; background: var(--card2); display: grid; place-items: center; font-weight: 800; font-size: 14px; color: var(--muted); }
+  .v2 .sl.d { background: rgba(70,194,138,.18); color: var(--ok); }
+  .v2 .sl.n { background: transparent; border: 2px solid var(--acc); color: var(--text); }
+  .v2 .days { margin-top: 18px; display: grid; gap: 8px; }
+  .v2 .day { display: flex; align-items: center; gap: 12px; background: var(--card); border-radius: 18px; padding: 12px; }
+  .v2 .day .l { width: 44px; height: 44px; border-radius: 14px; background: var(--card2); display: grid; place-items: center; font-weight: 800; font-size: 20px; }
+  .v2 .day small { display: block; color: var(--muted); font-size: 13px; }
+  .v2 .ph { position: relative; height: 300px; }
+  .v2 .ph img { width: 100%; height: 100%; object-fit: cover; }
+  .v2 .ph::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(17,19,23,.2) 0%, rgba(17,19,23,0) 30%, rgba(17,19,23,.95) 100%); }
+  .v2 .ph .top { position: absolute; top: 14px; left: 14px; right: 14px; display: flex; justify-content: space-between; z-index: 1; }
+  .v2 .ph .top span { background: rgba(17,19,23,.6); backdrop-filter: blur(8px); padding: 6px 12px; border-radius: 12px; font-size: 13px; font-weight: 700; }
+  .v2 .ph .ttl { position: absolute; left: 16px; right: 16px; bottom: 14px; z-index: 1; }
+  .v2 .ph .ttl h3 { margin: 0; font-size: 26px; font-weight: 800; line-height: 1.1; }
+  .v2 .ph .ttl small { color: #c9ced8; font-size: 13px; }
+  .v2 .body { padding: 14px 16px 90px; }
+  .v2 .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .v2 .tag { font-size: 12px; font-weight: 700; padding: 5px 10px; border-radius: 10px; background: var(--card); color: var(--muted); }
+  .v2 .tag.p { background: rgba(255,106,43,.16); color: var(--acc); }
+  .v2 .prog { display: flex; gap: 6px; margin: 16px 0 8px; }
+  .v2 .prog i { flex: 1; height: 6px; border-radius: 3px; background: var(--card2); }
+  .v2 .prog i.d { background: var(--ok); } .v2 .prog i.n { background: var(--acc); }
+  .v2 .now { display: flex; justify-content: space-between; align-items: baseline; }
+  .v2 .now b { font-size: 20px; font-weight: 800; }
+  .v2 .now span { color: var(--muted); font-size: 13px; }
+  .v2 .last { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .v2 .last b { color: var(--text); }
+  .v2 .entry { margin-top: 12px; background: var(--card); border-radius: 20px; padding: 14px; }
+  .v2 .num { display: grid; grid-template-columns: 52px 1fr 52px; gap: 8px; align-items: center; margin-bottom: 10px; }
+  .v2 .num span { height: 52px; border-radius: 14px; background: var(--card2); display: grid; place-items: center; font-size: 26px; }
+  .v2 .num div { text-align: center; }
+  .v2 .num div b { font-size: 34px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .v2 .num div small { display: block; color: var(--muted); font-size: 12px; margin-top: -4px; }
+  .v2 .cta { height: 56px; border-radius: 16px; background: var(--acc); color: var(--acc-ink); display: grid; place-items: center; font-weight: 800; font-size: 17px; }
+  .v2 .restbar { position: absolute; left: 0; right: 0; bottom: 0; background: var(--card2); padding: 12px 16px 16px; display: flex; align-items: center; gap: 10px; }
+  .v2 .restbar .t { flex: 1; font-weight: 800; font-size: 20px; font-variant-numeric: tabular-nums; }
+  .v2 .restbar .t small { display: block; font-size: 12px; color: var(--muted); font-weight: 600; }
+  .v2 .restbar i { font-style: normal; font-weight: 700; padding: 10px 14px; border-radius: 12px; background: var(--card); }
+  .v2 .restline { position: absolute; left: 0; top: 0; height: 3px; width: 60%; background: var(--acc); }
+
+  /* ============ ВАРИАНТ 3 — Новаторский: спортивный постер ============ */
+  .v3 { --paper:#f1efe9; --ink:#111; --muted:#6b6862; --blue:#2f4bff; --red:#ff3b1f; --line:#d9d5cc;
+        background: var(--paper); color: var(--ink); font-family: Inter, system-ui, sans-serif; }
+  .v3 .cond { font-family: Oswald, Impact, sans-serif; text-transform: uppercase; letter-spacing: .01em; }
+  .v3 .pad { padding: 18px 18px 80px; }
+  .v3 .topline { display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; margin-top: 14px; border-bottom: 2px solid var(--ink); padding-bottom: 8px; }
+  .v3 .wkbig { font-size: 96px; font-weight: 700; line-height: .9; margin: 18px 0 0; }
+  .v3 .wkbig span { color: var(--blue); }
+  .v3 .sub { font-size: 13px; color: var(--muted); margin: 6px 0 16px; }
+  .v3 .cal { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
+  .v3 .cal i { aspect-ratio: 1; border: 2px solid var(--ink); display: grid; place-items: center; font-style: normal; font-family: Oswald, sans-serif; font-weight: 600; font-size: 18px; }
+  .v3 .cal i.d { background: var(--ink); color: var(--paper); }
+  .v3 .cal i.n { background: var(--blue); border-color: var(--blue); color: #fff; }
+  .v3 .cal i.dl { border-style: dashed; color: var(--muted); }
+  .v3 .next { margin-top: 18px; background: var(--ink); color: var(--paper); padding: 18px; position: relative; overflow: hidden; }
+  .v3 .next .l { position: absolute; right: 8px; top: -26px; font-size: 180px; font-weight: 700; color: var(--blue); line-height: 1; }
+  .v3 .next small { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; opacity: .7; }
+  .v3 .next h3 { font-size: 30px; font-weight: 700; margin: 4px 0 14px; line-height: 1; position: relative; max-width: 70%; }
+  .v3 .next .go { display: inline-block; background: var(--paper); color: var(--ink); font-weight: 800; padding: 12px 18px; position: relative; text-transform: uppercase; font-size: 14px; letter-spacing: .04em; }
+  .v3 .list { margin-top: 18px; border-top: 2px solid var(--ink); }
+  .v3 .list div { display: flex; align-items: baseline; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .v3 .list b { font-size: 28px; width: 28px; }
+  .v3 .list span { flex: 1; font-weight: 600; } .v3 .list small { color: var(--muted); }
+  .v3 .duo { position: relative; height: 250px; background: var(--blue); }
+  .v3 .duo img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) contrast(1.15); mix-blend-mode: multiply; }
+  .v3 .duo .n { position: absolute; left: 14px; top: 10px; color: #fff; font-size: 15px; font-weight: 700; letter-spacing: .06em; }
+  .v3 .exn { font-size: 34px; font-weight: 700; line-height: .95; margin: 14px 18px 0; }
+  .v3 .meta { margin: 8px 18px 0; font-size: 13px; color: var(--muted); }
+  .v3 .meta b { color: var(--ink); }
+  .v3 .counter { display: flex; align-items: flex-end; justify-content: space-between; margin: 14px 18px 0; border-top: 2px solid var(--ink); border-bottom: 2px solid var(--ink); padding: 6px 0; }
+  .v3 .counter .c { font-size: 64px; font-weight: 700; line-height: 1; }
+  .v3 .counter .c span { color: var(--muted); }
+  .v3 .counter .r { text-align: right; font-size: 13px; color: var(--muted); padding-bottom: 8px; }
+  .v3 .counter .r b { display: block; color: var(--ink); font-size: 15px; }
+  .v3 .val { display: grid; grid-template-columns: 1fr 1fr; margin: 0 18px; border-bottom: 2px solid var(--ink); }
+  .v3 .val > div { padding: 10px 0; text-align: center; }
+  .v3 .val > div + div { border-left: 2px solid var(--ink); }
+  .v3 .val small { font-size: 11px; font-weight: 700; letter-spacing: .08em; color: var(--muted); }
+  .v3 .val .ctl { display: flex; justify-content: center; align-items: center; gap: 14px; }
+  .v3 .val .ctl i { font-style: normal; font-size: 22px; width: 32px; height: 32px; display: grid; place-items: center; border: 2px solid var(--ink); }
+  .v3 .val .ctl b { font-size: 40px; font-weight: 700; }
+  .v3 .done { margin: 14px 18px 0; background: var(--blue); color: #fff; text-align: center; padding: 16px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+  .v3 .hist { margin: 14px 18px 0; font-size: 13px; }
+  .v3 .hist div { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+  .v3 .rest3 { position: absolute; left: 0; right: 0; bottom: 0; background: var(--red); color: #fff; display: flex; justify-content: space-between; align-items: center; padding: 12px 18px 16px; }
+  .v3 .rest3 b { font-size: 30px; }
+  .v3 .rest3 span { font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Тренировки — 3 варианта дизайна</h1>
+  <p>Каждый вариант — два экрана: главная и карточка упражнения во время подхода. Данные настоящие: неделя 2 месяца, рычажная тяга сидя. Варианты идут от самого привычного к самому смелому.</p>
+
+  <!-- ====================== 1 ====================== -->
+  <section class="variant">
+    <h2>1. «Как в Apple Фитнес» — по учебнику</h2>
+    <p class="why">Чёрный фон, системный шрифт, сгруппированные списки, как в настройках iPhone. Один кислотно-лаймовый акцент, кольцо прогресса месяца. Знакомо, спокойно, ничего лишнего.</p>
+    <div class="phones">
+      <div>
+        <div class="phone v1"><div class="screen"><div class="pad">
+          <div class="large">Тренировки</div>
+          <div class="today">
+            <svg class="ring" viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="none" stroke="#2c2c2e" stroke-width="12"/><circle cx="50" cy="50" r="42" fill="none" stroke="#b4ff39" stroke-width="12" stroke-linecap="round" stroke-dasharray="66 264" transform="rotate(-90 50 50)"/><text x="50" y="47" text-anchor="middle" fill="#fff" font-size="22" font-weight="800" font-family="Inter">3/12</text><text x="50" y="64" text-anchor="middle" fill="#8e8e93" font-size="10" font-family="Inter">месяц</text></svg>
+            <div><small>Неделя 2 из 4 · сегодня</small><b>A · Грудь, плечи, трицепс</b><span class="pill">Начать</span></div>
+          </div>
+          <div class="dots"><i class="d"></i><i class="d"></i><i class="d"></i><i class="n"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="sect">Программа</div>
+          <div class="group">
+            <div class="row"><span class="ltr">A</span><span class="t">Грудь, плечи, трицепс<small>разминка + 8 упражнений</small></span><span class="chev">›</span></div>
+            <div class="row"><span class="ltr">B</span><span class="t">Спина, бицепс<small>разминка + 9 упражнений</small></span><span class="chev">›</span></div>
+            <div class="row"><span class="ltr">C</span><span class="t">Смешанный, акцент на руки<small>разминка + 9 упражнений</small></span><span class="chev">›</span></div>
+          </div>
+          <div class="sect">История</div>
+          <div class="group"><div class="row"><span class="t">Прошлые тренировки<small>последняя: 22.10, день C</small></span><span class="chev">3 ›</span></div></div>
+        </div></div></div>
+        <div class="cap">Главная</div>
+      </div>
+      <div>
+        <div class="phone v1"><div class="screen">
+          <div class="photo"><img src="../img/Leverage_Iso_Row-0.jpg" alt=""></div>
+          <div class="exh"><h3>Рычажная тяга сидя</h3>
+            <div class="chips"><span class="chip p">Широчайшие</span><span class="chip p">Середина спины</span><span class="chip">Бицепс</span><span class="chip">Задняя дельта</span></div></div>
+          <div class="sets group">
+            <div class="set"><span>1</span><b>50 × 12</b><span class="ok">✓</span></div>
+            <div class="set now"><span>2</span><b>сейчас</b><span style="color:#8e8e93">10–12</span></div>
+            <div class="set"><span style="color:#8e8e93">3</span><span style="color:#8e8e93">впереди</span><span style="color:#8e8e93">10–12</span></div>
+          </div>
+          <div class="steps">
+            <div class="stp"><small>Вес, кг</small><div class="ctl"><span>−</span><b>50</b><span>+</span></div></div>
+            <div class="stp"><small>Повторы</small><div class="ctl"><span>−</span><b>12</b><span>+</span></div></div>
+          </div>
+          <div class="big">Подход 2 из 3 сделан</div>
+          <div style="height:90px"></div>
+          <div class="float"><span>Отдых 1:12</span><i>Пропустить</i></div>
+        </div></div>
+        <div class="cap">Карточка упражнения</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== 2 ====================== -->
+  <section class="variant">
+    <h2>2. «Уверенный тёмный» — доработанный</h2>
+    <p class="why">То же, что сейчас, но смелее. Яркий градиентный блок «следующая тренировка» с огромной буквой дня. Фото упражнения на всю ширину, название поверх фото. Крупные цифры веса и повторов, полоска прогресса подходов. Шрифт Manrope — плотнее и спортивнее системного.</p>
+    <div class="phones">
+      <div>
+        <div class="phone v2"><div class="screen"><div class="pad">
+          <div class="hello"><b>Тренировки</b><span>Месяц 1 · неделя 2</span></div>
+          <div class="hero"><span class="ghost">A</span>
+            <small>Следующая · тренировка 4 из 12</small>
+            <div class="d">День A</div>
+            <p>Грудь, плечи, трицепс</p>
+            <span class="go">▶ Начать</span>
+          </div>
+          <div class="month">
+            <div class="h"><b>План на месяц</b><span>3 из 12</span></div>
+            <div class="bar"><i></i></div>
+            <div class="wk"><span>Нед. 1</span><span class="sl d">A ✓</span><span class="sl d">B ✓</span><span class="sl d">C ✓</span></div>
+            <div class="wk"><span>Нед. 2</span><span class="sl n">A</span><span class="sl">B</span><span class="sl">C</span></div>
+            <div class="wk"><span>Нед. 3</span><span class="sl">A</span><span class="sl">B</span><span class="sl">C</span></div>
+            <div class="wk"><span>Нед. 4 ↓</span><span class="sl">A</span><span class="sl">B</span><span class="sl">C</span></div>
+          </div>
+          <div class="days">
+            <div class="day"><span class="l">B</span><span>Спина, бицепс<small>разминка + 9 упражнений</small></span></div>
+            <div class="day"><span class="l">C</span><span>Смешанный, акцент на руки<small>разминка + 9 упражнений</small></span></div>
+          </div>
+        </div></div></div>
+        <div class="cap">Главная</div>
+      </div>
+      <div>
+        <div class="phone v2"><div class="screen">
+          <div class="ph"><img src="../img/Leverage_Iso_Row-0.jpg" alt="">
+            <div class="top"><span>← 4 / 10</span><span>0:34</span></div>
+            <div class="ttl"><h3>Рычажная тяга сидя</h3><small>Рычажный тренажёр с упором грудью</small></div>
+          </div>
+          <div class="body">
+            <div class="tags"><span class="tag p">Широчайшие</span><span class="tag p">Середина спины</span><span class="tag">Бицепс</span><span class="tag">По одной руке</span></div>
+            <div class="prog"><i class="d"></i><i class="n"></i><i></i></div>
+            <div class="now"><b>Подход 2 из 3</b><span>цель 10–12 · отдых 1:30</span></div>
+            <div class="last">Прошлый раз: <b>40 · 40 · 50 × 12</b></div>
+            <div class="entry">
+              <div class="num"><span>−</span><div><b>50</b><small>кг</small></div><span>+</span></div>
+              <div class="num"><span>−</span><div><b>12</b><small>повторов</small></div><span>+</span></div>
+              <div class="cta">✓ Подход сделан</div>
+            </div>
+          </div>
+          <div class="restbar"><span class="restline"></span><span class="t"><small>Отдых</small>1:12</span><i>+30 с</i><i>Пропустить</i></div>
+        </div></div>
+        <div class="cap">Карточка упражнения</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== 3 ====================== -->
+  <section class="variant">
+    <h2>3. «Спортивный постер» — новаторский</h2>
+    <p class="why">Светлая «бумажная» тема, узкий плакатный шрифт заглавными буквами, жёсткие линии без скруглений, электрический синий и красный. Огромные номера недели и подхода видны с расстояния вытянутой руки. Фото в синем дуотоне. Как журнал Nike Training, а не приложение.</p>
+    <div class="phones">
+      <div>
+        <div class="phone v3"><div class="screen"><div class="pad">
+          <div class="topline"><span>Тренировки</span><span>Месяц 01</span></div>
+          <div class="wkbig cond">Неделя <span>02</span></div>
+          <div class="sub">3 из 12 тренировок · неделя 4 — разгрузка</div>
+          <div class="cal">
+            <i class="d">A</i><i class="d">B</i><i class="d">C</i><i class="n">A</i><i>B</i><i>C</i>
+            <i>A</i><i>B</i><i>C</i><i class="dl">A</i><i class="dl">B</i><i class="dl">C</i>
+          </div>
+          <div class="next"><span class="l cond">A</span>
+            <small>Следующая</small>
+            <h3 class="cond">Грудь, плечи, трицепс</h3>
+            <span class="go">Начать →</span>
+          </div>
+          <div class="list">
+            <div><b class="cond">B</b><span>Спина, бицепс</span><small>9 упр.</small></div>
+            <div><b class="cond">C</b><span>Смешанный, руки</span><small>9 упр.</small></div>
+          </div>
+        </div></div></div>
+        <div class="cap">Главная</div>
+      </div>
+      <div>
+        <div class="phone v3"><div class="screen">
+          <div class="duo"><img src="../img/Leverage_Iso_Row-0.jpg" alt=""><span class="n cond">04 / 10 · День A</span></div>
+          <div class="exn cond">Рычажная тяга сидя</div>
+          <div class="meta"><b>Широчайшие, середина спины</b> · бицепс, задняя дельта</div>
+          <div class="counter"><div class="c cond">02<span>/03</span></div><div class="r"><b>Цель 10–12</b>прошлый раз 50 × 12</div></div>
+          <div class="val">
+            <div><small>КГ</small><div class="ctl"><i>−</i><b class="cond">50</b><i>+</i></div></div>
+            <div><small>ПОВТОРЫ</small><div class="ctl"><i>−</i><b class="cond">12</b><i>+</i></div></div>
+          </div>
+          <div class="done">Подход сделан</div>
+          <div class="hist"><div><span>01</span><b>50 × 12</b><span>21:35</span></div></div>
+          <div style="height:80px"></div>
+          <div class="rest3"><span>Отдых</span><b class="cond">1:12</b><span>Пропустить →</span></div>
+        </div></div>
+        <div class="cap">Карточка упражнения</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="rec">
+    <h2>Моя рекомендация — вариант 2</h2>
+    <p>Он оставляет то, что уже работает: тёмный фон, к которому ты привык, и оранжевый, как в иконке. При этом он заметно сильнее: главная сразу говорит, что делать сегодня, а в карточке крупнее всего то, что нужно в зале, — вес, повторы и номер подхода.</p>
+    <p>Вариант 1 аккуратнее, но выглядит как настройки телефона. Вариант 3 самый запоминающийся, но светлый экран в полутёмном зале будет слепить.</p>
+    <p>Можно и смешать: например, взять кольцо прогресса из первого варианта или огромные цифры подхода из третьего.</p>
+  </div>
+</div>
+</body>
+</html>
