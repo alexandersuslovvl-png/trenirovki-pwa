@@ -146,6 +146,11 @@ button, .btn { font: inherit; color: inherit; cursor: pointer; }
 .done-sets li > span:first-child { color: var(--muted); }
 .done-sets li.todo { background: none; border: 1px dashed var(--line); color: var(--muted); }
 .done-sets li.todo.now { border-color: var(--accent); color: var(--text); }
+.uni-seg { margin: 0; }
+.side-badge {
+  display: inline-block; margin: 0 0 10px; padding: 4px 12px; border-radius: 99px;
+  background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: 14px;
+}
 .restore-status { margin: 10px 0 0; padding: 10px 14px; border-radius: 12px; background: var(--surface-2); font-size: 14px; }
 .restore-status[hidden] { display: none; }
 #paste-data {
@@ -185,7 +190,7 @@ button, .btn { font: inherit; color: inherit; cursor: pointer; }
   background: var(--surface-2); border-top: 1px solid var(--line);
 }
 .rest[hidden] { display: none; }
-.rest .rest-time { flex: 1; font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.rest .rest-time { flex: 1; white-space: nowrap; font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .rest button { min-height: 44px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); font-weight: 600; }
 .rest.over { background: var(--accent); color: var(--accent-ink); }
 .rest.over button { background: rgba(0, 0, 0, .15); border-color: transparent; color: inherit; }

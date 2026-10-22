@@ -1,5 +1,5 @@
 // Хранилище тренировок в localStorage. Все времена — метки Date.now().
-import { PROGRAM } from "./data.js";
+import { EXERCISES, PROGRAM } from "./data.js";
 
 const KEY = "gym.v1";
 const DAYS = ["A", "B", "C"];
@@ -42,7 +42,10 @@ export function nextDay() {
 export function startSession(day) {
   const s = {
     id: uid(), day, startedAt: Date.now(), endedAt: null,
-    items: PROGRAM[day].items.map((it) => ({ ex: it.ex, superset: it.superset || null, plan: { ...it }, startedAt: null, endedAt: null, sets: [] })),
+    items: PROGRAM[day].items.map((it) => ({
+      ex: it.ex, superset: it.superset || null, plan: { ...it }, uni: defaultUni(it.ex, it.superset),
+      startedAt: null, endedAt: null, sets: [],
+    })),
   };
   state.sessions.push(s);
   state.activeId = s.id;
@@ -62,17 +65,46 @@ export function addSet(idx, set) {
   const it = active().items[idx];
   if (!it.startedAt) it.startedAt = Date.now();
   it.sets.push({ ...set, t: Date.now() });
+  delete it.half;
+  save();
+}
+
+// По одной руке/ноге/стороне: «always» — всегда, «optional» — как выбрал в прошлый раз
+function defaultUni(ex, superset) {
+  const mode = EXERCISES[ex]?.uni;
+  if (superset || !mode) return false;
+  if (mode === "always") return true;
+  for (const s of finished()) {
+    const it = s.items.find((i) => i.ex === ex && !i.superset && i.sets.length);
+    if (it) return !!it.uni;
+  }
+  return false;
+}
+
+export function setUni(idx, on) {
+  active().items[idx].uni = on;
+  save();
+}
+
+// Первая половина подхода (левая сторона) — сохраняется, чтобы пережить перезагрузку страницы
+export function saveHalf(idx, half) {
+  const it = active().items[idx];
+  if (!it.startedAt) it.startedAt = Date.now();
+  it.half = { ...half, t: Date.now() };
   save();
 }
 
 export function removeLastSet(idx) {
-  active().items[idx].sets.pop();
+  const it = active().items[idx];
+  if (it.half) { delete it.half; state.rest = null; save(); return; }
+  it.sets.pop();
   save();
 }
 
 export function endItem(idx) {
   const it = active().items[idx];
   if (!it.startedAt) it.startedAt = Date.now();
+  delete it.half; // незаконченный подход (только левая сторона) не сохраняем
   it.endedAt = Date.now();
   save();
 }
@@ -100,8 +132,8 @@ export function deleteSession(id) {
   save();
 }
 
-export function startRest(seconds) {
-  state.rest = seconds > 0 ? { endsAt: Date.now() + seconds * 1000, fired: false } : null;
+export function startRest(seconds, label = "Отдых") {
+  state.rest = seconds > 0 ? { endsAt: Date.now() + seconds * 1000, fired: false, label } : null;
   save();
 }
 export function extendRest(seconds) {

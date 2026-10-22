@@ -21,6 +21,14 @@ export function fmtPart(exKey, w, r, unit = "reps") {
 
 export function fmtSet(item, plan, set) {
   const unit = plan?.unit || "reps";
+  if (set.rL != null || set.rR != null) {
+    // по одной стороне: «14×10/10» (левая/правая), «30/30 с»
+    const reps = `${set.rL ?? "—"}/${set.rR ?? "—"}`;
+    if (unit === "sec") return `${reps} с`;
+    const w = num(set.w), wR = num(set.wR);
+    if (!EXERCISES[item.ex].weightLabel || w == null) return reps;
+    return `${wR != null && wR !== w ? `${w}/${wR}` : w}×${reps}`;
+  }
   const a = fmtPart(item.ex, set.w, set.r, unit);
   return item.superset ? `${a} + ${fmtPart(item.superset, set.w2, set.r2, unit)}` : a;
 }
@@ -28,7 +36,10 @@ export function fmtSet(item, plan, set) {
 export function tonnage(session) {
   let t = 0;
   session.items.forEach((it) => it.sets.forEach((s) => {
-    t += (num(s.w) || 0) * (num(s.r) || 0) + (num(s.w2) || 0) * (num(s.r2) || 0);
+    if (s.rL != null || s.rR != null) {
+      const w = num(s.w) || 0;
+      t += w * (num(s.rL) || 0) + (num(s.wR) ?? w) * (num(s.rR) || 0);
+    } else t += (num(s.w) || 0) * (num(s.r) || 0) + (num(s.w2) || 0) * (num(s.r2) || 0);
   }));
   // планки в секундах не считаем — у них нет веса, так что они и так дают 0
   return Math.round(t);
@@ -43,7 +54,7 @@ export function toMarkdown(session) {
   const sep = `|---|${"---|".repeat(cols)}---|`;
   const rows = session.items.map((it, i) => {
     const plan = planOf(session, i);
-    const name = `[[${EXERCISES[it.ex].name}]]` + (it.superset ? ` + [[${EXERCISES[it.superset].name}]]` : "");
+    const name = `[[${EXERCISES[it.ex].name}]]` + (it.superset ? ` + [[${EXERCISES[it.superset].name}]]` : "") + (it.uni ? " *(по очереди, Л/П)*" : "");
     const cells = plan.warmup
       ? Array.from({ length: cols }, (_, k) => (k === 0 && it.endedAt ? fmtDur(it.endedAt - it.startedAt) : ""))
       : Array.from({ length: cols }, (_, k) => (it.sets[k] ? fmtSet(it, plan, it.sets[k]) : (k < plan.sets ? "—" : "")));
@@ -61,7 +72,7 @@ export function toMarkdown(session) {
     "",
     `**Время:** ${fmtTime(session.startedAt)}–${fmtTime(end)} (${fmtDur(end - session.startedAt)}) · **Подходов:** ${setCount(session)} · **Тоннаж:** ${tonnage(session)} кг`,
     "",
-    "Записано в приложении. Формат: вес × повторы (для гантелей — вес одной гантели).",
+    "Записано в приложении. Формат: вес × повторы (для гантелей — вес одной гантели); «10/10» — левая/правая сторона.",
     "",
     head, sep, ...rows,
     "",

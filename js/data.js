@@ -121,7 +121,9 @@ export const EXERCISES = {
   "img": [
    "img/Dumbbell_Shoulder_Press-0.jpg",
    "img/Dumbbell_Shoulder_Press-1.jpg"
-  ]
+  ],
+  "uni": "optional",
+  "limb": "arm"
  },
  "Triceps_Pushdown_-_Rope_Attachment": {
   "name": "Разгибания рук на блоке",
@@ -148,7 +150,9 @@ export const EXERCISES = {
   "img": [
    "img/Triceps_Pushdown_-_Rope_Attachment-0.jpg",
    "img/Triceps_Pushdown_-_Rope_Attachment-1.jpg"
-  ]
+  ],
+  "uni": "optional",
+  "limb": "arm"
  },
  "Goblet_Squat": {
   "name": "Гоблет-присед",
@@ -269,7 +273,9 @@ export const EXERCISES = {
   "img": [
    "img/Seated_Cable_Rows-0.jpg",
    "img/Seated_Cable_Rows-1.jpg"
-  ]
+  ],
+  "uni": "optional",
+  "limb": "arm"
  },
  "One-Arm_Dumbbell_Row": {
   "name": "Тяга гантели в наклоне",
@@ -300,7 +306,9 @@ export const EXERCISES = {
   "img": [
    "img/One-Arm_Dumbbell_Row-0.jpg",
    "img/One-Arm_Dumbbell_Row-1.jpg"
-  ]
+  ],
+  "uni": "always",
+  "limb": "arm"
  },
  "Band_Assisted_Pull-Up": {
   "name": "Подтягивания в гравитроне",
@@ -392,7 +400,9 @@ export const EXERCISES = {
   "img": [
    "img/Dumbbell_Bicep_Curl-0.jpg",
    "img/Dumbbell_Bicep_Curl-1.jpg"
-  ]
+  ],
+  "uni": "optional",
+  "limb": "arm"
  },
  "Hammer_Curls": {
   "name": "Молотки",
@@ -418,7 +428,9 @@ export const EXERCISES = {
   "img": [
    "img/Hammer_Curls-0.jpg",
    "img/Hammer_Curls-1.jpg"
-  ]
+  ],
+  "uni": "optional",
+  "limb": "arm"
  },
  "Stiff-Legged_Dumbbell_Deadlift": {
   "name": "Румынская тяга с гантелями",
@@ -506,7 +518,9 @@ export const EXERCISES = {
   "img": [
    "img/Pallof_Press-0.jpg",
    "img/Pallof_Press-1.jpg"
-  ]
+  ],
+  "uni": "always",
+  "limb": "side"
  },
  "Barbell_Bench_Press_-_Medium_Grip": {
   "name": "Жим штанги лёжа",
@@ -595,7 +609,9 @@ export const EXERCISES = {
   "img": [
    "img/Side_Lateral_Raise-0.jpg",
    "img/Side_Lateral_Raise-1.jpg"
-  ]
+  ],
+  "uni": "optional",
+  "limb": "arm"
  },
  "Dips_-_Triceps_Version": {
   "name": "Отжимания на брусьях",
@@ -655,7 +671,9 @@ export const EXERCISES = {
   "img": [
    "img/Dumbbell_Lunges-0.jpg",
    "img/Dumbbell_Lunges-1.jpg"
-  ]
+  ],
+  "uni": "always",
+  "limb": "leg"
  },
  "Reverse_Crunch": {
   "name": "Обратные скручивания",
@@ -710,7 +728,9 @@ export const EXERCISES = {
   "img": [
    "img/Side_Bridge-0.jpg",
    "img/Side_Bridge-1.jpg"
-  ]
+  ],
+  "uni": "always",
+  "limb": "side"
  },
  "Ab_Roller": {
   "name": "Ролик для пресса",
@@ -771,7 +791,9 @@ export const EXERCISES = {
   "img": [
    "img/Leverage_Incline_Chest_Press-0.jpg",
    "img/Leverage_Incline_Chest_Press-1.jpg"
-  ]
+  ],
+  "uni": "optional",
+  "limb": "arm"
  },
  "Machine_Shoulder_Military_Press": {
   "name": "Жим на плечи в тренажёре",
@@ -834,7 +856,9 @@ export const EXERCISES = {
   "img": [
    "img/Leg_Press-0.jpg",
    "img/Leg_Press-1.jpg"
-  ]
+  ],
+  "uni": "optional",
+  "limb": "leg"
  },
  "Leverage_Iso_Row": {
   "name": "Рычажная тяга сидя",
@@ -865,7 +889,9 @@ export const EXERCISES = {
   "img": [
    "img/Leverage_Iso_Row-0.jpg",
    "img/Leverage_Iso_Row-1.jpg"
-  ]
+  ],
+  "uni": "optional",
+  "limb": "arm"
  },
  "Hyperextensions_Back_Extensions": {
   "name": "Гиперэкстензия",
@@ -925,7 +951,9 @@ export const EXERCISES = {
   "img": [
    "img/Standing_Biceps_Cable_Curl-0.jpg",
    "img/Standing_Biceps_Cable_Curl-1.jpg"
-  ]
+  ],
+  "uni": "optional",
+  "limb": "arm"
  },
  "Lying_Leg_Curls": {
   "name": "Сгибания ног лёжа",
@@ -954,7 +982,9 @@ export const EXERCISES = {
   "img": [
    "img/Lying_Leg_Curls-0.jpg",
    "img/Lying_Leg_Curls-1.jpg"
-  ]
+  ],
+  "uni": "optional",
+  "limb": "leg"
  },
  "Ab_Crunch_Machine": {
   "name": "Тренажёр для пресса",
@@ -983,6 +1013,36 @@ export const EXERCISES = {
   "img": [
    "img/Ab_Crunch_Machine-0.jpg",
    "img/Ab_Crunch_Machine-1.jpg"
+  ]
+ },
+ "Decline_Crunch": {
+  "name": "Скручивания на наклонной скамье",
+  "kind": "пресс",
+  "muscleText": "прямая мышца живота («кубики»), больше верхняя часть",
+  "steps": [
+   "Зацепи ноги за валики скамьи с отрицательным наклоном (голова ниже таза), ляг на спину.",
+   "Руки скрести на груди или держи у висков — не тяни ими голову.",
+   "Скручивайся вверх, отрывая лопатки и приближая рёбра к тазу. Поясница остаётся прижатой.",
+   "Медленно опустись до касания лопатками скамьи, не расслабляя пресс."
+  ],
+  "mistakes": [
+   "Подъём до самого верха с прямой спиной — работают мышцы бедра, а не пресс.",
+   "Рывки и тяга головы руками.",
+   "Падение вниз без контроля."
+  ],
+  "note": "Замена тренажёру для пресса, которого нет в зале. Усложнение: круче угол скамьи или блин 2,5–5 кг на груди.",
+  "equipment": "Скамья для пресса с отрицательным наклоном",
+  "primary": [
+   "abs"
+  ],
+  "secondary": [
+   "obliques"
+  ],
+  "weightLabel": "Блин на груди, кг",
+  "weightStep": 2.5,
+  "img": [
+   "img/Decline_Crunch-0.jpg",
+   "img/Decline_Crunch-1.jpg"
   ]
  },
  "Elliptical_Trainer": {

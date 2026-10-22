@@ -13,6 +13,16 @@ const target = (p) => (p.warmup ? `${range(p)} мин` : `${p.sets} × ${range(p
 const plural = (n, one, few, many) => (n % 10 === 1 && n % 100 !== 11 ? one : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? few : many);
 const repsText = (p) => `${range(p)} ${p.unit === "sec" ? "секунд" : p.unit === "min" ? "минут" : plural(p.max, "повтор", "повтора", "повторов")}`;
 const targetLong = (p) => (p.warmup ? repsText(p) : `${p.sets} ${plural(p.sets, "подход", "подхода", "подходов")} по ${repsText(p)}`);
+// Работа по одной руке / ноге / стороне
+const SWITCH_REST = 15;
+const LIMB = {
+  arm: { one: "рука", both: "Обе руки сразу", alt: "По одной руке", sw: "Смена руки" },
+  leg: { one: "нога", both: "Обе ноги сразу", alt: "По одной ноге", sw: "Смена ноги" },
+  side: { one: "сторона", both: "Обе стороны сразу", alt: "По сторонам", sw: "Смена стороны" },
+};
+const limbOf = (exKey) => LIMB[EXERCISES[exKey].limb] || LIMB.side;
+// повторы подхода для проверки прогрессии: в режиме «по сторонам» — по слабой стороне
+const setReps = (s) => (s.rL != null || s.rR != null ? Math.min(+s.rL || 0, +s.rR || 0) : +s.r);
 const exName = (it) => EXERCISES[it.ex].name + (it.superset ? ` + ${EXERCISES[it.superset].name}` : "");
 
 // Черновик значений подхода (вес/повторы), чтобы перерисовка экрана их не сбрасывала
@@ -154,7 +164,7 @@ function defaults(idx) {
   const plan = store.planOf(store.active(), idx);
   const prev = it.sets[it.sets.length - 1] || store.lastResult(it.ex, it.superset)?.sets[0];
   return {
-    w: prev?.w ?? "", r: prev?.r ?? plan.min,
+    w: prev?.w ?? "", r: prev?.r ?? prev?.rL ?? plan.min,
     w2: prev?.w2 ?? "", r2: prev?.r2 ?? plan.min,
   };
 }
@@ -194,8 +204,13 @@ function setInputs(exKey, plan, d, suffix) {
 function progressHint(it, plan) {
   const last = store.lastResult(it.ex, it.superset);
   if (!last || plan.unit === "sec") return "";
-  const top = last.sets.length >= plan.sets && last.sets.slice(0, plan.sets).every((s) => +s.r >= plan.max && (!it.superset || +s.r2 >= plan.max));
-  return top && EXERCISES[it.ex].weightLabel ? `<p class="hint">В прошлый раз все подходы на верхней границе — пора добавить вес (+${EXERCISES[it.ex].weightStep} кг).</p>` : "";
+  const top = last.sets.length >= plan.sets && last.sets.slice(0, plan.sets).every((s) => setReps(s) >= plan.max && (!it.superset || +s.r2 >= plan.max));
+  const ex = EXERCISES[it.ex];
+  if (!top || !ex.weightLabel) return "";
+  // гравитрон: противовес помогает, поэтому прогресс — уменьшать его
+  return ex.weightLabel.startsWith("Противовес")
+    ? `<p class="hint">В прошлый раз все подходы на верхней границе — пора уменьшить противовес (−${ex.weightStep} кг).</p>`
+    : `<p class="hint">В прошлый раз все подходы на верхней границе — пора добавить вес (+${ex.weightStep} кг).</p>`;
 }
 
 function renderExercise(idx) {
@@ -209,6 +224,15 @@ function renderExercise(idx) {
   const shownEx = it.superset && tab === 1 ? it.superset : it.ex;
   const running = it.startedAt && !it.endedAt;
   const doneEnough = it.sets.length >= plan.sets;
+  const ex = EXERCISES[it.ex];
+  const uni = !it.superset && !!it.uni;
+  const limb = limbOf(it.ex);
+  const canToggle = ex.uni === "optional" && !it.superset && !it.sets.length && !it.half;
+  const uniBlock = canToggle
+    ? `<div class="seg uni-seg">${[[false, limb.both], [true, limb.alt]].map(([on, label]) =>
+        `<button class="${uni === on ? "on" : ""}" data-act="uni" data-on="${on ? 1 : 0}">${label}</button>`).join("")}</div>
+       ${uni ? `<p class="muted small">Каждый подход: левая → ${SWITCH_REST} с на смену → правая → отдых.</p>` : ""}`
+    : uni ? `<p class="muted small">По очереди: левая ${limb.one} → ${SWITCH_REST} с на смену → правая → отдых.</p>` : "";
 
   $app.innerHTML = `
     <header class="top"><button class="back" data-go="#/w">←</button>
@@ -221,6 +245,7 @@ function renderExercise(idx) {
     <section class="plan">
       <div><span class="lbl">Цель по программе</span><b>${targetLong(plan)}</b>${plan.side ? ` <span class="muted">${esc(plan.side)}</span>` : ""}${plan.rest ? `<span class="muted"> · отдых ${clock(plan.rest)}</span>` : ""}</div>
       ${plan.note ? `<p class="muted small">${esc(plan.note)}</p>` : ""}
+      ${uniBlock}
       ${last ? `<div><span class="lbl">Прошлый раз, ${fmtDate(last.date)}</span>${last.sets.map((x) => fmtSet(it, plan, x)).join(" · ")}</div>` : ""}
       ${progressHint(it, plan)}
     </section>
@@ -239,18 +264,23 @@ function renderExercise(idx) {
       <ol class="done-sets">${Array.from({ length: Math.max(plan.sets, it.sets.length) }, (_, k) => {
         const x = it.sets[k];
         if (x) return `<li><span>${k + 1}</span><b>${fmtSet(it, plan, x)}</b><span class="muted">${k >= plan.sets ? "доп. · " : ""}${fmtTime(x.t)}</span></li>`;
-        return `<li class="todo ${k === it.sets.length && running ? "now" : ""}"><span>${k + 1}</span><span>${k === it.sets.length && running ? "сейчас" : "впереди"}</span><span>${repsText(plan)}</span></li>`;
+        const now = k === it.sets.length && running;
+        const nowText = now ? (uni ? (it.half ? `сейчас · правая (левая: ${fmtSet(it, plan, { w: it.half.w, r: it.half.r })})` : "сейчас · левая") : "сейчас") : "впереди";
+        return `<li class="todo ${now ? "now" : ""}"><span>${k + 1}</span><span>${nowText}</span><span>${repsText(plan)}</span></li>`;
       }).join("")}</ol>
       ${running ? `
-        ${!doneEnough || extraSet[idx] ? `<form class="entry" data-idx="${idx}">
+        ${!doneEnough || extraSet[idx] || it.half ? `<form class="entry" data-idx="${idx}">
           ${it.superset ? `<p class="lbl">${esc(EXERCISES[it.ex].name)}</p>` : ""}
+          ${uni ? `<p class="side-badge">${it.half ? "Правая" : "Левая"} ${limb.one}</p>` : ""}
           ${setInputs(it.ex, plan, d, "")}
           ${it.superset ? `<p class="lbl">${esc(EXERCISES[it.superset].name)}</p>${setInputs(it.superset, plan, d, "2")}` : ""}
-          <button class="btn ${doneEnough ? "" : "primary"} wide big" type="submit">✓ Подход ${it.sets.length + 1}${doneEnough ? " (дополнительный)" : ` из ${plan.sets}`} сделан</button>
+          <button class="btn ${doneEnough && !it.half ? "" : "primary"} wide big" type="submit">${
+            uni && !it.half ? `✓ Левая ${limb.one} сделана`
+            : `✓ ${uni ? `Правая ${limb.one} — п` : "П"}одход ${it.sets.length + 1}${doneEnough ? " (дополнительный)" : ` из ${plan.sets}`} сделан`}</button>
         </form>` : `<p class="done-msg">Все ${plan.sets} ${plural(plan.sets, "подход", "подхода", "подходов")} по программе сделаны.</p>`}
-        ${it.sets.length ? `<button class="link" data-act="undo">Отменить последний подход</button>` : ""}
+        ${it.sets.length || it.half ? `<button class="link" data-act="undo">${it.half ? "Отменить левую сторону" : "Отменить последний подход"}</button>` : ""}
         <button class="btn ${doneEnough ? "primary big" : ""} wide" data-act="end-item">■ Закончить упражнение</button>
-        ${doneEnough && !extraSet[idx] ? `<button class="link" data-act="extra-set">+ Сделать дополнительный подход</button>` : ""}`
+        ${doneEnough && !extraSet[idx] && !it.half ? `<button class="link" data-act="extra-set">+ Сделать дополнительный подход</button>` : ""}`
       : `<button class="link" data-act="reopen">Продолжить это упражнение</button>`}
     </section>` : ""}
 
@@ -315,7 +345,7 @@ function renderRest() {
   }
   $rest.hidden = false;
   $rest.classList.toggle("over", left <= 0);
-  $rest.innerHTML = `<span class="rest-time">${left > 0 ? `Отдых ${clock(left)}` : `Пора${left < -1 ? ` · +${clock(-left)}` : "!"}`}</span>
+  $rest.innerHTML = `<span class="rest-time">${left > 0 ? `${esc(r.label || "Отдых")} ${clock(left)}` : `Пора${left < -1 ? ` · +${clock(-left)}` : "!"}`}</span>
     <button data-act="rest-add">+30 с</button><button data-act="rest-stop">${left > 0 ? "Пропустить" : "Ок"}</button>`;
 }
 
@@ -342,7 +372,21 @@ document.addEventListener("submit", (e) => {
   const { idx, d } = readForm(form);
   const it = store.active().items[idx];
   const plan = store.planOf(store.active(), idx);
-  const set ={ w: d.w ?? "", r: d.r === "" ? null : +d.r };
+  const reps = d.r === "" ? null : +d.r;
+  if (it.uni && !it.superset) {
+    // по одной стороне: левая → короткая пауза на смену → правая → обычный отдых
+    if (!it.half) {
+      store.saveHalf(idx, { w: d.w ?? "", r: reps });
+      store.startRest(SWITCH_REST, limbOf(it.ex).sw);
+      return route();
+    }
+    const set = { w: it.half.w, rL: it.half.r, rR: reps };
+    if ((d.w ?? "") !== it.half.w) set.wR = d.w ?? "";
+    store.addSet(idx, set);
+    store.startRest(plan.rest);
+    return route();
+  }
+  const set = { w: d.w ?? "", r: reps };
   if (it.superset) Object.assign(set, { w2: d.w2 ?? "", r2: d.r2 === "" ? null : +d.r2 });
   store.addSet(idx, set);
   // последний плановый подход тоже даёт отдых — следующим будет другое упражнение
@@ -437,6 +481,7 @@ document.addEventListener("click", async (e) => {
     case "undo": store.removeLastSet(idx); return route();
     case "tab": supersetTab[idx] = +el.dataset.i; return route();
     case "extra-set": extraSet[idx] = true; return route();
+    case "uni": store.setUni(idx, el.dataset.on === "1"); return route();
     case "rest-add": store.extendRest(30); return renderRest();
     case "rest-stop": store.stopRest(); return renderRest();
     case "finish": {

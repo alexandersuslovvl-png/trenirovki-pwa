@@ -1,5 +1,5 @@
 // Сгенерировано tools/build_sw.py — не редактировать вручную.
-const CACHE = "trenirovki-73e1e0bbbc";
+const CACHE = "trenirovki-87c761bd61";
 const ASSETS = [
   "./",
   "index.html",
@@ -20,6 +20,8 @@ const ASSETS = [
   "img/Barbell_Bench_Press_-_Medium_Grip-1.jpg",
   "img/Cable_Crunch-0.jpg",
   "img/Cable_Crunch-1.jpg",
+  "img/Decline_Crunch-0.jpg",
+  "img/Decline_Crunch-1.jpg",
   "img/Dips_-_Triceps_Version-0.jpg",
   "img/Dips_-_Triceps_Version-1.jpg",
   "img/Dumbbell_Bench_Press-0.jpg",
