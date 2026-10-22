@@ -57,6 +57,15 @@ export function monthPosition() {
   };
 }
 
+// Разгрузочная неделя: на подход меньше, вес прежний
+const weekPlan = (it, deload) => (deload && !it.warmup && it.sets > 1 ? { ...it, sets: it.sets - 1, deload: true } : { ...it });
+
+// План дня для просмотра до старта — с учётом того, какая неделя будет следующей
+export function previewPlans(day) {
+  const deload = monthPosition().week === MONTH.deload;
+  return PROGRAM[day].items.map((it) => weekPlan(it, deload));
+}
+
 export function startSession(day) {
   const pos = monthPosition();
   const deload = pos.week === MONTH.deload;
@@ -64,7 +73,7 @@ export function startSession(day) {
     id: uid(), day, startedAt: Date.now(), endedAt: null, month: pos.month, week: pos.week, deload,
     items: PROGRAM[day].items.map((it) => {
       // разгрузочная неделя: на подход меньше, вес прежний
-      const plan = deload && !it.warmup && it.sets > 1 ? { ...it, sets: it.sets - 1, deload: true } : { ...it };
+      const plan = weekPlan(it, deload);
       return { ex: it.ex, superset: it.superset || null, plan, uni: defaultUni(it.ex, it.superset), startedAt: null, endedAt: null, sets: [] };
     }),
   };

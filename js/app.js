@@ -59,7 +59,7 @@ async function keepAwake(on) {
 
 /* ---------- роутер ---------- */
 function route() {
-  const [, view, arg] = location.hash.replace(/^#/, "").split("/");
+  const [, view, arg, arg2] = location.hash.replace(/^#/, "").split("/");
   const a = store.active();
   keepAwake(!!a);
   if ((view === "w" || view === "e") && !a) return go("#/");
@@ -68,6 +68,7 @@ function route() {
   else if (view === "e") renderExercise(+arg);
   else if (view === "s") renderSummary(arg);
   else if (view === "h") renderHistory();
+  else if (view === "p" && PROGRAM[arg]) arg2 == null ? renderPreview(arg) : renderPreviewExercise(arg, +arg2);
   else renderHome();
   renderRest();
 }
@@ -117,7 +118,7 @@ function renderHome() {
     <h2>${a ? "Или начать другую" : "Начать тренировку"}</h2>
     <div class="days">
       ${Object.entries(PROGRAM).map(([d, p]) => `
-        <button class="card day ${d === next && !a ? "next" : ""}" data-act="start" data-day="${d}">
+        <button class="card day ${d === next && !a ? "next" : ""}" data-go="#/p/${d}">
           <span class="letter">${d}</span>
           <span class="day-body"><b>${esc(p.title)}</b>
           <span class="muted">разминка + ${p.items.filter((x) => !x.warmup).length} упражнений${d === next ? " · следующая по очереди" : ""}</span></span>
@@ -197,7 +198,7 @@ function info(exKey) {
         <p class="muted small">${esc(ex.muscleText)}</p>
       </div></div>
     ${ex.note ? `<p class="note">${esc(ex.note)}</p>` : ""}
-    <details class="tech" ${store.active().items.some((i) => i.sets.length) ? "" : "open"}>
+    <details class="tech" ${store.active()?.items.some((i) => i.sets.length) ? "" : "open"}>
       <summary>Техника выполнения</summary><ol>${ex.steps.map((s) => `<li>${esc(s)}</li>`).join("")}</ol></details>
     <details class="tech"><summary>Типичные ошибки</summary><ul>${ex.mistakes.map((s) => `<li>${esc(s)}</li>`).join("")}</ul></details>`;
 }
@@ -305,6 +306,67 @@ function renderExercise(idx) {
         : `<button class="btn ${it.endedAt ? "primary" : ""}" data-act="finish">Завершить тренировку</button>`}
     </nav>`;
   tickElapsed();
+}
+
+/* ---------- просмотр дня без запуска ---------- */
+function startButton(day) {
+  const a = store.active();
+  return a && a.day === day
+    ? `<button class="btn primary wide big" data-go="#/w">Продолжить тренировку ${day}</button>`
+    : `<button class="btn primary wide big" data-act="start" data-day="${day}">▶ Начать тренировку ${day}</button>`;
+}
+
+function renderPreview(day) {
+  const p = PROGRAM[day];
+  const plans = store.previewPlans(day);
+  const pos = store.monthPosition();
+  $app.innerHTML = `
+    <header class="top"><button class="back" data-go="#/">←</button>
+      <div><h1>День ${day}</h1><span class="muted">Просмотр · ${esc(p.title)}</span></div></header>
+    <p class="muted small">Тренировка не запущена — можно спокойно смотреть упражнения.${plans.some((x) => x.deload) ? ` Неделя ${pos.week} разгрузочная: подходов на один меньше.` : ""}</p>
+    <ol class="list">
+      ${plans.map((pl, i) => {
+        const prev = plans[i - 1];
+        const sep = pl.abs && !prev?.abs ? "Пресс" : prev?.warmup && !pl.warmup ? "Силовая часть" : "";
+        const it = { ex: pl.ex, superset: pl.superset || null };
+        return `${sep ? `<li class="sep">${sep}</li>` : ""}
+        <li><button class="item" data-go="#/p/${day}/${i}">
+          <img src="${EXERCISES[pl.ex].img[0]}" alt="" loading="lazy">
+          <span class="item-body"><b>${esc(exName(it))}</b><span class="muted">${target(pl)}${pl.side ? " " + esc(pl.side) : ""}</span></span>
+          <span class="pill">${pl.warmup ? "разминка" : `${pl.sets}×`}</span></button></li>`;
+      }).join("")}
+    </ol>
+    ${startButton(day)}`;
+}
+
+function renderPreviewExercise(day, idx) {
+  const plans = store.previewPlans(day);
+  const plan = plans[idx];
+  if (!plan) return go(`#/p/${day}`);
+  const it = { ex: plan.ex, superset: plan.superset || null };
+  const ex = EXERCISES[it.ex];
+  const last = plan.warmup ? null : store.lastResult(it.ex, it.superset);
+  const tab = supersetTab["p" + idx] || 0;
+  const shownEx = it.superset && tab === 1 ? it.superset : it.ex;
+  const limb = limbOf(it.ex);
+  $app.innerHTML = `
+    <header class="top"><button class="back" data-go="#/p/${day}">←</button>
+      <div><span class="muted">Просмотр · ${idx + 1} / ${plans.length} · День ${day}</span><h1 class="ex-title">${esc(exName(it))}</h1></div></header>
+    ${it.superset ? `<div class="seg">${[it.ex, it.superset].map((k, i) => `<button class="${i === tab ? "on" : ""}" data-act="ptab" data-i="${i}">${esc(EXERCISES[k].name)}</button>`).join("")}</div>` : ""}
+    ${info(shownEx)}
+    <section class="plan">
+      <div><span class="lbl">Цель по программе</span><b>${targetLong(plan)}</b>${plan.side ? ` <span class="muted">${esc(plan.side)}</span>` : ""}${plan.rest ? `<span class="muted"> · отдых ${clock(plan.rest)}</span>` : ""}</div>
+      ${plan.note ? `<p class="muted small">${esc(plan.note)}</p>` : ""}
+      ${ex.uni === "always" ? `<p class="muted small">По очереди: левая ${limb.one} → ${SWITCH_REST} с на смену → правая → отдых.</p>`
+        : ex.uni === "optional" && !it.superset ? `<p class="muted small">Можно делать ${limb.alt.toLowerCase()} — выбор будет перед стартом упражнения.</p>` : ""}
+      ${last ? `<div><span class="lbl">Прошлый раз, ${fmtDate(last.date)}</span>${last.sets.map((x) => fmtSet(it, plan, x)).join(" · ")}</div>` : ""}
+      ${plan.warmup ? "" : progressHint(it, plan)}
+    </section>
+    <nav class="pager">
+      ${idx > 0 ? `<button class="btn" data-go="#/p/${day}/${idx - 1}">← Назад</button>` : `<span></span>`}
+      ${idx < plans.length - 1 ? `<button class="btn" data-go="#/p/${day}/${idx + 1}">Дальше →</button>` : `<span></span>`}
+    </nav>
+    ${startButton(day)}`;
 }
 
 /* ---------- итог и история ---------- */
@@ -479,6 +541,7 @@ document.addEventListener("click", async (e) => {
     case "reopen": store.startItem(idx); return route();
     case "undo": store.removeLastSet(idx); return route();
     case "tab": supersetTab[idx] = +el.dataset.i; return route();
+    case "ptab": supersetTab["p" + location.hash.split("/")[3]] = +el.dataset.i; return route();
     case "extra-set": extraSet[idx] = true; return route();
     case "uni": store.setUni(idx, el.dataset.on === "1"); return route();
     case "rest-add": store.extendRest(30); return renderRest();
