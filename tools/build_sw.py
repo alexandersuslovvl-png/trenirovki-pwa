@@ -21,11 +21,21 @@ const ASSETS = [
   {assets}
 ];
 
+// Фото и шрифты не меняются под тем же именем — берём их из прошлой версии кэша, остальное качаем заново.
+// (Если когда-нибудь заменишь картинку, дай ей новое имя файла.)
+const IMMUTABLE = /^(img|fonts)\\//;
+
 self.addEventListener("install", (e) => {{
-  // cache: "reload" — мимо HTTP-кэша браузера, иначе новая версия может собраться из старых файлов
-  e.waitUntil(caches.open(CACHE)
-    .then((c) => c.addAll(ASSETS.map((u) => new Request(u, {{ cache: "reload" }}))))
-    .then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then((c) => Promise.all(ASSETS.map(async (u) => {{
+    if (IMMUTABLE.test(u)) {{
+      const hit = await caches.match(u);
+      if (hit) return c.put(u, hit);
+    }}
+    // cache: "reload" — мимо HTTP-кэша браузера, иначе новая версия может собраться из старых файлов
+    const res = await fetch(new Request(u, {{ cache: "reload" }}));
+    if (!res.ok) throw new Error(`${{u}}: ${{res.status}}`);
+    return c.put(u, res);
+  }}))).then(() => self.skipWaiting()));
 }});
 
 self.addEventListener("activate", (e) => {{

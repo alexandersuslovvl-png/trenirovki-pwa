@@ -603,5 +603,34 @@ document.addEventListener("click", async (e) => {
   }
 });
 
-if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});
+/* ---------- обновление приложения ---------- */
+// Пока скачивается новая версия — надпись сверху; когда готова — страница перезагружается сама.
+function updateBanner(text) {
+  let el = document.getElementById("update-banner");
+  if (!text) { el?.remove(); return; }
+  if (!el) { el = Object.assign(document.createElement("div"), { id: "update-banner", className: "update-banner" }); document.body.appendChild(el); }
+  el.textContent = text;
+}
+
+if ("serviceWorker" in navigator) {
+  const hadController = !!navigator.serviceWorker.controller;
+  let reloading = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    // первая установка не требует перезагрузки — только смена версии
+    if (!hadController || reloading) return;
+    reloading = true;
+    location.reload();
+  });
+  navigator.serviceWorker.register("./sw.js").then((reg) => {
+    const watch = (sw) => {
+      if (!sw || !hadController) return;
+      updateBanner("Загружаю обновление…");
+      sw.addEventListener("statechange", () => { if (sw.state === "redundant") updateBanner(""); });
+    };
+    watch(reg.installing);
+    reg.addEventListener("updatefound", () => watch(reg.installing));
+    // проверять новую версию и при возврате в приложение
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") reg.update().catch(() => {}); });
+  }).catch(() => {});
+}
 route();
